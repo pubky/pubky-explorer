@@ -1,7 +1,16 @@
 .explorer {
-  width: 50vw;
+  /* width: 50vw; */
   text-align: left;
 
   min-width: 320px;
   max-width: 1280px;
+}
+
+.path {
+  display:flex;
+  /* column-gap: .5rem; */
+}
+
+.path button {
+  padding: .5rem
 }

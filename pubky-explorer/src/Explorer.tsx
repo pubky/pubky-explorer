@@ -1,28 +1,19 @@
 import './css/Explorer.css'
 import { For } from 'solid-js'
-import { store, updateDir, resetStore, loadList, downloadFile } from './state.ts'
+import { store, updateDir, downloadFile } from './state.ts'
 
 export function Explorer() {
 
-  loadList()
-
   return (<div class="explorer">
     <div class="explorer">
-      <div>
-        <button onClick={resetStore}>Home</button>
-      </div>
-      <br />
-      <br />
       <DirectoryButtons ></DirectoryButtons>
-      <br />
-      <br />
 
       <For each={store.list}>
-        {(link, _) => (
+        {({ link, name }, _) => (
           <ul>
             <li class="file">
               <button onClick={() => downloadFile(link)} >
-                {link.replace("pubky://", "").replace(store.dir, "")}
+                {name}
               </button>
             </li>
           </ul>
@@ -57,13 +48,14 @@ function DirectoryButtons() {
 
 
   return (
-    <For each={buttons()}>
-      {({ text, path }, _) => (
-        <button onclick={() => {
-          updateDir(path)
-          loadList()
-        }}>{text}</button>
-      )}
-    </For>
+    <div class="path">
+      <For each={buttons()}>
+        {({ text, path }, i) => (
+          <button disabled={i() === (buttons().length - 1) || buttons().length == 2} onclick={() => {
+            updateDir(path)
+          }}>{text + "/"}</button>
+        )}
+      </For>
+    </div>
   )
 }

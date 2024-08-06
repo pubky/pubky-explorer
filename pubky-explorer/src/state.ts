@@ -3,8 +3,8 @@ import { createStore } from 'solid-js/store';
 
 export const client = PubkyClient.testnet();
 
-export const [store, setStore] = createStore<{ view: string, dir: string, loading: Boolean, list: Array<string> }>({
-  view: "home",
+export const [store, setStore] = createStore<{ explorer: Boolean, dir: string, loading: Boolean, list: Array<{ link: string, name: string }> }>({
+  explorer: false,
   dir: "",
   loading: false,
   list: []
@@ -14,7 +14,7 @@ export function resetStore() {
   setStore('dir', '')
   setStore('loading', false)
   setStore('list', [])
-  setStore('view', 'home')
+  setStore('explorer', false)
 }
 
 export function loadList() {
@@ -22,7 +22,14 @@ export function loadList() {
 
   setStore('loading', true)
 
-  client.list(`pubky://${path}`).then((list: Array<string>) => {
+  client.list(`pubky://${path}`).then((l: Array<string>) => {
+    const list = l.map(link => {
+      return {
+        link,
+        name: link.replace('pubky://', '').replace(store.dir, '')
+      }
+    })
+
     setStore('loading', false)
 
     // @ts-ignore
@@ -55,6 +62,7 @@ export function updateDir(path: string) {
   }
 
   setStore("dir", path)
+  loadList()
 }
 
 export function downloadFile(link: string) {
@@ -73,6 +81,8 @@ export function downloadFile(link: string) {
       element.download = parts[parts.length - 1];
       document.body.appendChild(element); // Required for this to work in FireFox
       element.click();
+
+      element.remove()
     }
   })
 }
