@@ -1,6 +1,6 @@
 import './css/Explorer.css'
 import { For } from 'solid-js'
-import { store, updateDir, resetStore, loadList } from './state.ts'
+import { store, updateDir, resetStore, loadList, downloadFile } from './state.ts'
 
 export function Explorer() {
 
@@ -19,11 +19,13 @@ export function Explorer() {
 
       <For each={store.list}>
         {(link, _) => (
-          < div>
-            <button value={link} >
-              {link.replace("pubky://", "").replace(store.dir, "")}
-            </button>
-          </div>
+          <ul>
+            <li class="file">
+              <button onClick={() => downloadFile(link)} >
+                {link.replace("pubky://", "").replace(store.dir, "")}
+              </button>
+            </li>
+          </ul>
         )}
       </For>
     </div >
