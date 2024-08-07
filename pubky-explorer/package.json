@@ -10,9 +10,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@faker-js/faker": "^8.4.1",
     "@synonymdev/pubky": "^0.1.12",
-    "solid-js": "^1.8.19",
-    "@faker-js/faker": "^8.4.1"
+    "solid-js": "^1.8.19"
   },
   "devDependencies": {
     "typescript": "^5.5.3",

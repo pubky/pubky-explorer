@@ -3,7 +3,7 @@ import './css/App.css'
 import { Explorer } from './Explorer.tsx'
 import { Spinner } from './Spinner.tsx'
 import { Show, createSignal, } from "solid-js"
-import { store, setStore, updateDir, } from "./state.ts"
+import { store, setStore, updateDir, resetStore, } from "./state.ts"
 import { DEMO_PUBKY, populate } from './example.ts'
 
 
@@ -57,10 +57,12 @@ function App() {
       </div>
       <div class="card">
         <p>
-          Enter a Pubky to explore their public data.
+          Enter a Pubky {store.explorer ? "or relative path" : ""} to explore their public data.
         </p>
         <form class="form" onsubmit={(e) => {
           e.preventDefault()
+
+          resetStore();
 
           updateDir(input())
 
@@ -76,6 +78,8 @@ function App() {
               title="Explore a populated pubky"
               onclick={(e) => {
                 e.preventDefault();
+
+                resetStore();
 
                 setStore("loading", true)
                 populate().then(() => {

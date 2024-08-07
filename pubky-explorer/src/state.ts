@@ -3,7 +3,7 @@ import { createStore } from 'solid-js/store';
 
 export const client = PubkyClient.testnet();
 
-export const [store, setStore] = createStore<{ explorer: Boolean, dir: string, loading: Boolean, list: Array<{ link: string, name: string }> }>({
+export const [store, setStore] = createStore<{ explorer: Boolean, dir: string, loading: boolean, list: Array<{ link: string, name: string, isFolder: bool }> }>({
   explorer: false,
   dir: "",
   loading: false,
@@ -17,23 +17,43 @@ export function resetStore() {
   setStore('explorer', false)
 }
 
-export function loadList() {
+export function loadList(cursor?: string) {
+  let path = store.dir
+
+  setStore('list', [])
+  loadMore()
+}
+
+export function loadMore() {
+
+  // @ts-ignore
+  const cursor = (store.list.length > 0 && store.list[store.list.length - 1])['link']
+
   let path = store.dir
 
   setStore('loading', true)
 
-  client.list(`pubky://${path}`, "", false, 10).then((l: Array<string>) => {
+  // ITEMS IN VIEW
+  let limit = Math.ceil(window.innerHeight / 40);
+
+  console.log({ limit })
+
+  client.list(`pubky://${path}`, cursor || "", false, limit).then((l: Array<string>) => {
     const list = l.map(link => {
+      let name = link.replace('pubky://', '').replace(store.dir, '');
+      let isFolder = name.endsWith('/');
+
       return {
         link,
-        name: link.replace('pubky://', '').replace(store.dir, '')
+        isFolder,
+        name
       }
     })
 
     setStore('loading', false)
 
     // @ts-ignore
-    setStore('list', list)
+    setStore('list', [...[...store.list], ...list])
     setStore('dir', path)
   });
 }

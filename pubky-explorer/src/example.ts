@@ -11,7 +11,7 @@ const HOMESERVER = PublicKey.from("8pinxxgqs41n4aididenw5apqp1urfmzdztr8jt4abrkd
 export const DEMO_PUBKY = PUBKY;
 
 async function doneBefore() {
-  let list = await client.list(`pubky://${PUBKY}/pub/airline/`).catch(e => []);
+  let list = await client.list(`pubky://${PUBKY}/pub/airline/`).catch(_ => []);
 
   return list?.length > 0
 }
@@ -59,17 +59,18 @@ export async function populate() {
 
   visit(structure, [], paths)
 
-  const morePaths = []
+  const morePaths: string[][] = []
 
-  paths.forEach((path, i) => {
+  paths.forEach(path => {
     for (let i = 0; i <= 100; i++) {
-      let expanded = []
+      let expanded: string[] = []
 
       path.forEach((p, i) => {
         if (i === 0) {
           return expanded.push(p)
         }
 
+        // @ts-ignore
         let x = faker[path[0]][p]
 
         x = x?.()
@@ -94,7 +95,6 @@ export async function populate() {
 
         return expanded.push(x.replace(/[^a-zA-Z0-9-_]/g, ''))
       })
-      console.log(expanded)
 
       morePaths.push(expanded)
     }
