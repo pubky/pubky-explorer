@@ -28,12 +28,12 @@ function DirectoryButtons() {
   let buttons = () => {
     let parts = store.dir.split("/").filter(Boolean);
 
+    parts = parts.slice(1)
+
     let buttons = parts.map((text, i) => {
       let btn = { text: "", path: "" };
 
-      btn.text = i == 0
-        ? text.slice(0, 5) + ".." + text.slice(47, 52)
-        : text
+      btn.text = text
 
       btn.path = parts.slice(0, i + 1).join("/") + "/"
 

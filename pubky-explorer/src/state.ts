@@ -22,7 +22,7 @@ export function loadList() {
 
   setStore('loading', true)
 
-  client.list(`pubky://${path}`).then((l: Array<string>) => {
+  client.list(`pubky://${path}`, "", false, 10).then((l: Array<string>) => {
     const list = l.map(link => {
       return {
         link,
@@ -39,16 +39,13 @@ export function loadList() {
 }
 
 export function updateDir(path: string) {
-  path = path.toLowerCase()
-
-
   path = path.replace('pubky://', '')
 
   let parts = path.split("/").filter(Boolean);
 
-  if (parts.length > 1 && !path.endsWith("/")) {
-    parts = parts.slice(0, parts.length - 1)
-  }
+  // if (parts.length > 1 && !path.endsWith("/")) {
+  //   parts = parts.slice(0, parts.length - 1)
+  // }
 
   path = parts.join('/')
 
@@ -86,3 +83,4 @@ export function downloadFile(link: string) {
     }
   })
 }
+

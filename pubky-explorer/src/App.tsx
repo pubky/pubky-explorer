@@ -4,12 +4,19 @@ import { Explorer } from './Explorer.tsx'
 import { Spinner } from './Spinner.tsx'
 import { Show, createSignal, } from "solid-js"
 import { store, setStore, updateDir, } from "./state.ts"
+import { DEMO_PUBKY, populate } from './example.ts'
 
 
 function App() {
   let [input, setInput] = createSignal('')
 
   function updateInput(value: string) {
+    // Relative 
+    if (value.startsWith(".") || value.startsWith('/')) {
+      setInput(store.dir + value.slice(1))
+      return
+    }
+
     try {
       let pubky = value;
 
@@ -62,7 +69,24 @@ function App() {
         }}>
           <input placeholder="pubky://o4dksfbqk85ogzdb5osziw6befigbuxmuxkuxq8434q89uj56uyy" value={input()} oninput={(e) => updateInput(e.target.value)} ></input>
           <div class="form-buttons">
-            <button disabled class="demo-button" title="Explore a pubky (doesn't work in testnet)">
+            <button
+              type='button'
+              disabled={!!store.loading}
+              class="demo-button"
+              title="Explore a populated pubky"
+              onclick={(e) => {
+                e.preventDefault();
+
+                setStore("loading", true)
+                populate().then(() => {
+                  updateDir(DEMO_PUBKY)
+                  setStore('explorer', true)
+                  setStore("loading", false)
+                }).catch(e => {
+                  alert(e.message)
+                })
+
+              }}>
               Demo
             </button>
 

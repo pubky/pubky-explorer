@@ -1,7 +1,7 @@
 .spinner {
-    position: absolute;
-    right: 0;
-    top: 0;
+    position: fixed;
+    right: 1rem;
+    top: 1rem;
 
     border: 4px solid #f3f3f344; /* Light grey */
     border-top: 4px solid #f3f3f3ff; /* Blue */
