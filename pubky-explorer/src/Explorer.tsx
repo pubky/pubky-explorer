@@ -6,7 +6,6 @@ import { store, updateDir, downloadFile, loadMore } from './state.ts'
 export function Explorer() {
   let loadMoreRef: Element | undefined = undefined;
 
-
   onMount(() => {
     const observer = new IntersectionObserver((entries) => {
       if (entries[0].isIntersecting) {
@@ -35,10 +34,10 @@ export function Explorer() {
 
       <ul>
         <For each={store.list}>
-          {({ link, name, isFolder }, _) => (
+          {({ link, name, isDirectory }, _) => (
             <li class="file">
-              <button onClick={() => downloadFile(link)} >
-                <span class="icon">{(isFolder ? "📁" : "📄")}</span>
+              <button onClick={() => isDirectory ? updateDir(store.dir + name) : downloadFile(link)} >
+                <span class="icon">{(isDirectory ? "📁" : "📄")}</span>
                 <For each={name.split('/')}>
                   {(x, i) => <span style={(i() % 2) == 0 ? { opacity: 0.7 } : {}}>{i() === 0 ? "" : "/"}{x}</span>}
                 </For>
