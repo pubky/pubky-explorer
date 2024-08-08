@@ -7,11 +7,13 @@ export const [store, setStore] = createStore<{
   explorer: Boolean,
   dir: string,
   loading: boolean,
+  shallow: boolean,
   list: Array<{ link: string, name: string, isDirectory: boolean }>
 }>({
   explorer: false,
   dir: "",
   loading: false,
+  shallow: true,
   list: []
 })
 
@@ -27,6 +29,13 @@ export function loadList() {
   loadMore()
 }
 
+export function switchShallow() {
+  setStore('shallow', !store.shallow)
+  if (store.dir.length > 0) {
+    loadList()
+  }
+}
+
 export function loadMore() {
   // @ts-ignore
   const cursor = (store.list.length > 0 && store.list[store.list.length - 1])['link']
@@ -38,7 +47,7 @@ export function loadMore() {
   // ITEMS IN VIEW
   let limit = Math.ceil(window.innerHeight / 40);
 
-  client.list(`pubky://${path}`, cursor || "", false, limit, true).then((l: Array<string>) => {
+  client.list(`pubky://${path}`, cursor || "", false, limit, store.shallow).then((l: Array<string>) => {
     const list = l.map(link => {
       let name = link.replace('pubky://', '').replace(store.dir, '');
       let isDirectory = name.endsWith('/');
