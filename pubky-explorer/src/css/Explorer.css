@@ -1,14 +1,10 @@
 .explorer {
-  /* width: 50vw; */
   text-align: left;
-
-  min-width: 320px;
-  max-width: 1280px;
 }
 
 .path {
   display:flex;
-  /* column-gap: .5rem; */
+  flex-wrap: wrap;
 }
 
 .path button {
@@ -16,20 +12,42 @@
 }
 
 ul {
+  padding-left: 1rem;
+
   display: flex;
   flex-direction: column; 
   row-gap: .5rem;
+
+  width: fit-content;
+  max-width: calc(100% - 1rem);
 }
 
 li {
-  text-decoration: none
+  width: 100%;
 }
 
 li button {
-  padding: .5rem
+  position: relative;
+
+  width: 100%;
+
+  padding: .5rem;
+  padding-left: 2rem;
+
+  text-align: left;
+  white-space: normal;
+  overflow: hidden;
 }
 
 li button .icon {
   font-size: .8em;
   padding-right: .8em; 
+
+  position: absolute;
+  left: .5rem;
+}
+
+li button span {
+  word-wrap: break-word; 
+  overflow-wrap: break-word; 
 }

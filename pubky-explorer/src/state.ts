@@ -105,7 +105,6 @@ export function downloadFile(link: string) {
 
   client.get(link).then(bytes => {
     if (bytes) {
-      setStore("loading", false);
 
       const element = document.createElement('a');
 
@@ -118,6 +117,7 @@ export function downloadFile(link: string) {
       element.click();
 
       element.remove()
+      setStore("loading", false);
     }
   })
 }
