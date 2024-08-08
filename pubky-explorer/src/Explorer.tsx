@@ -38,8 +38,10 @@ export function Explorer() {
           {({ link, name, isFolder }, _) => (
             <li class="file">
               <button onClick={() => downloadFile(link)} >
-                <span>{(isFolder ? "📁" : "📄")}</span>
-                {name}
+                <span class="icon">{(isFolder ? "📁" : "📄")}</span>
+                <For each={name.split('/')}>
+                  {(x, i) => <span style={(i() % 2) == 0 ? { opacity: 0.7 } : {}}>{i() === 0 ? "" : "/"}{x}</span>}
+                </For>
               </button>
             </li>
           )}
@@ -55,14 +57,14 @@ function DirectoryButtons() {
   let buttons = () => {
     let parts = store.dir.split("/").filter(Boolean);
 
-    const pubky = parts.shift()
-
     let buttons = parts.map((text, i) => {
       let btn = { text: "", path: "" };
 
-      btn.text = text
+      btn.text = i == 0
+        ? text.slice(0, 4) + ".." + text.slice(48, 52)
+        : text
 
-      btn.path = pubky + "/" + parts.slice(0, i + 1).join("/") + "/"
+      btn.path = parts.slice(0, i + 1).join("/") + "/"
 
 
       return btn
@@ -78,7 +80,7 @@ function DirectoryButtons() {
     <div class="path">
       <For each={buttons()}>
         {({ text, path }, i) => (
-          <button disabled={i() === (buttons().length - 1) || buttons().length == 1} onclick={() => {
+          <button disabled={i() === (buttons().length - 1) || buttons().length == 2} onclick={() => {
             updateDir(path)
           }}>{text + "/"}</button>
         )}

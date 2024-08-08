@@ -29,7 +29,7 @@ li button {
   padding: .5rem
 }
 
-li button span {
+li button .icon {
   font-size: .8em;
   padding-right: .8em; 
 }

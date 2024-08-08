@@ -17,9 +17,7 @@ export function resetStore() {
   setStore('explorer', false)
 }
 
-export function loadList(cursor?: string) {
-  let path = store.dir
-
+export function loadList() {
   setStore('list', [])
   loadMore()
 }
@@ -35,8 +33,6 @@ export function loadMore() {
 
   // ITEMS IN VIEW
   let limit = Math.ceil(window.innerHeight / 40);
-
-  console.log({ limit })
 
   client.list(`pubky://${path}`, cursor || "", false, limit).then((l: Array<string>) => {
     const list = l.map(link => {
@@ -59,7 +55,7 @@ export function loadMore() {
 }
 
 export function updateDir(path: string) {
-  path = path.replace('pubky://', '')
+  path = path?.split('://')[1] || path
 
   let parts = path.split("/").filter(Boolean);
 

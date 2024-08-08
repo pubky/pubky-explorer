@@ -11,36 +11,24 @@ function App() {
   let [input, setInput] = createSignal('')
 
   function updateInput(value: string) {
-    // Relative 
-    if (value.startsWith(".") || value.startsWith('/')) {
-      setInput(store.dir + value.slice(1))
-      return
-    }
+    if (store.dir.length == 0) {
+      try {
+        let pubky = value;
 
-    try {
-      let pubky = value;
+        if (!pubky.startsWith("pubky://")) {
+          if (pubky.length < 52) {
+            throw new Error("Pubky should be 52 characters at least")
+          }
 
-      if (!pubky.startsWith("pubky://")) {
-        if (pubky.length < 52) {
-          throw new Error("Pubky should be 52 characters at least")
+          pubky = "pubky://" + store.dir
         }
 
-        pubky = "pubky://" + store.dir
-      }
+        new URL(pubky)
 
-      new URL(pubky)
-
+        setInput(value)
+      } catch (_) { }
+    } else {
       setInput(value)
-    }
-    //@ts-ignore
-    catch (error: Error) {
-      // if (error.message.length > 0) {
-      //   alert("Invalid Pubky: " + error.message)
-      // }
-      // else {
-      //
-      //   alert("Invalid Pubky")
-      // }
     }
   }
 
@@ -62,9 +50,7 @@ function App() {
         <form class="form" onsubmit={(e) => {
           e.preventDefault()
 
-          resetStore();
-
-          updateDir(input())
+          updateDir(store.dir + input())
 
           setStore('explorer', true)
           setInput("")
