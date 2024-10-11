@@ -1,7 +1,7 @@
 import { PubkyClient } from '@synonymdev/pubky'
 import { createStore } from 'solid-js/store';
 
-export const client = PubkyClient.testnet();
+export const client = new PubkyClient();
 
 export const [store, setStore] = createStore<{
   explorer: Boolean,

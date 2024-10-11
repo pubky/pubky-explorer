@@ -4,7 +4,6 @@ import { Explorer } from './Explorer.tsx'
 import { Spinner } from './Spinner.tsx'
 import { Show, createSignal, } from "solid-js"
 import { store, setStore, updateDir, resetStore, switchShallow, } from "./state.ts"
-import { DEMO_PUBKY, populate } from './example.ts'
 
 
 function App() {
@@ -62,29 +61,6 @@ function App() {
               </input>
               <label for="s1-14">Shallow</label>
             </div>
-            <button
-              type='button'
-              disabled={!!store.loading}
-              class="demo-button"
-              title="Explore a populated pubky"
-              onclick={(e) => {
-                e.preventDefault();
-
-                resetStore();
-
-                setStore("loading", true)
-                populate().then(() => {
-                  updateDir(DEMO_PUBKY)
-                  setStore('explorer', true)
-                  setStore("loading", false)
-                }).catch(e => {
-                  alert(e.message)
-                })
-
-              }}>
-              Demo
-            </button>
-
             <button type="submit" disabled={input().length === 0}>
               Explore
             </button>

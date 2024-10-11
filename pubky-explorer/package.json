@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@faker-js/faker": "^8.4.1",
-    "@synonymdev/pubky": "^0.1.13",
+    "@synonymdev/pubky": "file:../../pubky/pubky/pkg",
     "solid-js": "^1.8.19"
   },
   "devDependencies": {
