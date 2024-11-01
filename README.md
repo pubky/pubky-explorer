@@ -9,7 +9,7 @@ https://github.com/user-attachments/assets/1a9ac9e6-3d61-445f-8851-59b6f431df18
 $ npm install # or pnpm install or yarn install
 ```
 
-### Learn more on the [Solid Website](https://solidjs.com) and come chat with us on our [Discord](https://discord.com/invite/solidjs)
+### Learn more on the [Pubky website](https://pubky.org) and come chat with us on our [Telegram](https://t.me/pubkychat)
 
 ## Available Scripts
 
@@ -30,4 +30,4 @@ Your app is ready to be deployed!
 
 ## Deployment
 
-Learn more about deploying your application with the [documentations](https://vitejs.dev/guide/static-deploy.html)
+Learn more about deploying Pubky Explorer from the [ViteJS documentation](https://vitejs.dev/guide/static-deploy.html)
