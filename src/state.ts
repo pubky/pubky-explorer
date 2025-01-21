@@ -1,7 +1,7 @@
-import { PubkyClient } from '@synonymdev/pubky'
+import { Client } from '@synonymdev/pubky'
 import { createStore } from 'solid-js/store';
 
-export const client = new PubkyClient();
+export const client = new Client();
 
 export const [store, setStore] = createStore<{
   explorer: Boolean,
@@ -103,22 +103,27 @@ export function updateDir(path: string) {
 export function downloadFile(link: string) {
   setStore("loading", true);
 
-  client.get(link).then(bytes => {
-    if (bytes) {
+  client.fetch(link).then(response => {
+    if (response.ok) {
+      // Convert the response to a Blob
+      response.blob().then(fileBlob => {
+        const element = document.createElement('a');
 
-      const element = document.createElement('a');
+        element.href = URL.createObjectURL(fileBlob);
+        let parts = link.split('/');
+        element.download = parts[parts.length - 1];
+        document.body.appendChild(element); // Required for this to work in Firefox
+        element.click();
 
-      const fileBlob = new Blob([bytes]);
-
-      element.href = URL.createObjectURL(fileBlob);
-      let parts = link.split('/')
-      element.download = parts[parts.length - 1];
-      document.body.appendChild(element); // Required for this to work in FireFox
-      element.click();
-
-      element.remove()
+        element.remove();
+        setStore("loading", false);
+      });
+    } else {
+      console.error("Failed to fetch file:", response.statusText);
       setStore("loading", false);
     }
-  })
+  }).catch(err => {
+    console.error("Error fetching file:", err);
+    setStore("loading", false);
+  });
 }
-
