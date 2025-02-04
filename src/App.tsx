@@ -3,7 +3,7 @@ import './css/App.css'
 import { Explorer } from './Explorer.tsx'
 import { Spinner } from './Spinner.tsx'
 import { Show, createSignal, } from "solid-js"
-import { store, setStore, updateDir, resetStore, switchShallow, } from "./state.ts"
+import { store, setStore, updateDir, switchShallow, } from "./state.ts"
 
 
 function App() {
