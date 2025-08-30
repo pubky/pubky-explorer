@@ -12,7 +12,7 @@
   "dependencies": {
     "@faker-js/faker": "^8.4.1",
     "@synonymdev/pubky": "^0.4.0-rc3",
-    "solid-js": "^1.8.19"
+    "solid-js": "^1.9.9"
   },
   "devDependencies": {
     "typescript": "^5.5.3",
