@@ -1,5 +1,7 @@
 # Pubky Explorer
 
+https://pubky.observer/
+
 ## Usage
 
 https://github.com/user-attachments/assets/1a9ac9e6-3d61-445f-8851-59b6f431df18
