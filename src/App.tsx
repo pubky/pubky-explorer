@@ -1,4 +1,4 @@
-import pubkyLogo from '/pubky.ico'
+import pubkyLogo from '/pubky.svg'
 import './css/App.css'
 import { Explorer } from './Explorer.tsx'
 import { Spinner } from './Spinner.tsx'
