@@ -1,11 +1,11 @@
 /* @refresh reload */
-import { render } from 'solid-js/web'
+import { render } from "solid-js/web";
 
-import './css/index.css'
-import App from './App'
+import "./css/index.css";
+import App from "./App";
 
-import './state.ts'
+import "./state.ts";
 
-const root = document.getElementById('root')
+const root = document.getElementById("root");
 
-render(() => <App />, root!)
+render(() => <App />, root!);

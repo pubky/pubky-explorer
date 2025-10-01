@@ -7,17 +7,16 @@
   margin: 0 auto;
   padding: 2rem;
 
-  display:flex;
-  flex-direction:column;
+  display: flex;
+  flex-direction: column;
 }
-
 
 .head {
   position: relative;
   width: 100%;
   display: flex;
   justify-content: center;
-  align-items: center
+  align-items: center;
 }
 
 .logo {
@@ -49,7 +48,7 @@
   align-items: center;
 }
 
-.home{
+.home {
   width: 100%;
   display: flex;
   flex-direction: column;
@@ -62,7 +61,7 @@
 }
 
 .form-buttons {
-  padding-top : 1rem;
+  padding-top: 1rem;
   display: flex;
   justify-content: flex-end;
   column-gap: 1rem;
@@ -71,7 +70,7 @@
 .checkbox-wrapper {
   display: flex;
   align-items: center;
-  column-gap: .5rem;
+  column-gap: 0.5rem;
   flex-grow: 1;
   cursor: pointer;
 }
@@ -103,8 +102,7 @@
   top: -6px;
 }
 
-.checkbox-wrapper input
-.checkbox-wrapper input::after {
+.checkbox-wrapper input .checkbox-wrapper input::after {
   transition: all 100ms ease-out;
 }
 
@@ -119,7 +117,7 @@
   width: 14px;
 }
 
-.checkbox-wrapper input[type=checkbox] {
+.checkbox-wrapper input[type="checkbox"] {
   cursor: default;
 }
 

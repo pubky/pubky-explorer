@@ -3,20 +3,20 @@
 }
 
 .path {
-  display:flex;
+  display: flex;
   flex-wrap: wrap;
 }
 
 .path button {
-  padding: .5rem
+  padding: 0.5rem;
 }
 
 ul {
   padding-left: 1rem;
 
   display: flex;
-  flex-direction: column; 
-  row-gap: .5rem;
+  flex-direction: column;
+  row-gap: 0.5rem;
 
   width: fit-content;
   max-width: calc(100% - 1rem);
@@ -31,7 +31,7 @@ li button {
 
   width: 100%;
 
-  padding: .5rem;
+  padding: 0.5rem;
   padding-left: 2rem;
 
   text-align: left;
@@ -40,14 +40,14 @@ li button {
 }
 
 li button .icon {
-  font-size: .8em;
-  padding-right: .8em; 
+  font-size: 0.8em;
+  padding-right: 0.8em;
 
   position: absolute;
-  left: .5rem;
+  left: 0.5rem;
 }
 
 li button span {
-  word-wrap: break-word; 
-  overflow-wrap: break-word; 
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }

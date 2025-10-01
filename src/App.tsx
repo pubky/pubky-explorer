@@ -1,13 +1,12 @@
-import pubkyLogo from '/pubky.svg'
-import './css/App.css'
-import { Explorer } from './Explorer.tsx'
-import { Spinner } from './Spinner.tsx'
-import { Show, createSignal, } from "solid-js"
-import { store, setStore, updateDir, switchShallow, } from "./state.ts"
-
+import pubkyLogo from "/pubky.svg";
+import "./css/App.css";
+import { Explorer } from "./Explorer.tsx";
+import { Spinner } from "./Spinner.tsx";
+import { Show, createSignal } from "solid-js";
+import { store, setStore, updateDir, switchShallow } from "./state.ts";
 
 function App() {
-  let [input, setInput] = createSignal('')
+  let [input, setInput] = createSignal("");
 
   function updateInput(value: string) {
     if (store.dir.length == 0) {
@@ -16,18 +15,18 @@ function App() {
 
         if (!pubky.startsWith("pubky://")) {
           if (pubky.length < 52) {
-            throw new Error("Pubky should be 52 characters at least")
+            throw new Error("Pubky should be 52 characters at least");
           }
 
-          pubky = "pubky://" + store.dir
+          pubky = "pubky://" + store.dir;
         }
 
-        new URL(pubky)
+        new URL(pubky);
 
-        setInput(value)
-      } catch (_) { }
+        setInput(value);
+      } catch (_) {}
     } else {
-      setInput(value)
+      setInput(value);
     }
   }
 
@@ -44,21 +43,28 @@ function App() {
       </div>
       <div class="card">
         <p>
-          Enter a Pubky {store.explorer ? "or relative path" : ""} to explore their public data.
+          Enter a Pubky {store.explorer ? "or relative path" : ""} to explore
+          their public data.
         </p>
-        <form class="form" onsubmit={(e) => {
-          e.preventDefault()
+        <form
+          class="form"
+          onsubmit={(e) => {
+            e.preventDefault();
 
-          updateDir(store.dir + input())
+            updateDir(store.dir + input());
 
-          setStore('explorer', true)
-          setInput("")
-        }}>
-          <input placeholder="pubky://o4dksfbqk85ogzdb5osziw6befigbuxmuxkuxq8434q89uj56uyy" value={input()} oninput={(e) => updateInput(e.target.value)} ></input>
+            setStore("explorer", true);
+            setInput("");
+          }}
+        >
+          <input
+            placeholder="pubky://o4dksfbqk85ogzdb5osziw6befigbuxmuxkuxq8434q89uj56uyy"
+            value={input()}
+            oninput={(e) => updateInput(e.target.value)}
+          ></input>
           <div class="form-buttons">
             <div class="checkbox-wrapper" onClick={switchShallow}>
-              <input type="checkbox" checked={store.shallow}>
-              </input>
+              <input type="checkbox" checked={store.shallow}></input>
               <label for="s1-14">Shallow</label>
             </div>
             <button type="submit" disabled={input().length === 0}>
@@ -66,10 +72,10 @@ function App() {
             </button>
           </div>
         </form>
-      </div >
+      </div>
       <Show when={store.explorer}>
         <Explorer></Explorer>
-      </Show >
+      </Show>
       <div class="home-container">
         <div class="home">
           <p class="read-the-docs">
@@ -78,7 +84,7 @@ function App() {
         </div>
       </div>
     </>
-  )
+  );
 }
 
-export default App
+export default App;
