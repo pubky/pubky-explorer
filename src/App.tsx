@@ -2,6 +2,7 @@ import pubkyLogo from "/pubky.svg";
 import "./css/App.css";
 import { Explorer } from "./Explorer.tsx";
 import { Spinner } from "./Spinner.tsx";
+import { ShareButton } from "./ShareButton";
 import { Show, createSignal, onMount, onCleanup, createEffect } from "solid-js";
 import {
   store,
@@ -10,6 +11,8 @@ import {
   switchShallow,
   setSort,
   toggleDirsFirst,
+  openPreview,
+  closePreview,
 } from "./state.ts";
 
 function App() {
@@ -18,6 +21,7 @@ function App() {
     "" | "pubky://" | "pk:"
   >("");
 
+  // mirror address bar; only add a prefix if the user used one
   createEffect(() => {
     const path = store.dir;
     const prefix = displayPrefix();
@@ -28,29 +32,37 @@ function App() {
     setInput(value);
   }
 
-  onMount(() => {
-    const url = new URL(window.location.href);
-    const hashP = url.hash.startsWith("#p=")
-      ? decodeURIComponent(url.hash.slice(3))
+  function handleUrl() {
+    const u = new URL(window.location.href);
+    const hashP = u.hash.startsWith("#p=")
+      ? decodeURIComponent(u.hash.slice(3))
       : null;
-    const queryP = url.searchParams.get("p");
-    const path = hashP || queryP;
-    if (path && path.trim().length > 0) {
-      setStore("explorer", true);
-      updateDir(path);
+    const queryP = u.searchParams.get("p");
+    const raw = (hashP || queryP || "").trim();
+    if (!raw) return;
+
+    setStore("explorer", true);
+
+    // If it ends with '/', treat as directory. Otherwise treat as "file in dir".
+    if (raw.endsWith("/")) {
+      updateDir(raw, "none"); // keep exact hash
+      closePreview();
+      return;
     }
-    const onPop = () => {
-      const u = new URL(window.location.href);
-      const hp = u.hash.startsWith("#p=")
-        ? decodeURIComponent(u.hash.slice(3))
-        : null;
-      const qp = u.searchParams.get("p");
-      const p = hp || qp || "";
-      if (p) {
-        setStore("explorer", true);
-        updateDir(p);
-      }
-    };
+
+    // Split into dir + file; update dir without touching the URL; open preview without rewriting hash
+    const cut = raw.lastIndexOf("/");
+    const dir = cut >= 0 ? raw.slice(0, cut + 1) : raw; // handles bare key
+    const file = cut >= 0 ? raw.slice(cut + 1) : "";
+
+    updateDir(dir, "none");
+    if (file)
+      openPreview(`pubky://${store.dir}${file}`, file, { updateUrl: false });
+  }
+
+  onMount(() => {
+    handleUrl();
+    const onPop = () => handleUrl();
     window.addEventListener("popstate", onPop);
     onCleanup(() => window.removeEventListener("popstate", onPop));
   });
@@ -77,17 +89,38 @@ function App() {
             e.preventDefault();
             setStore("error", null);
             setStore("list", []);
+
             const raw = input().trim();
             const m = raw.match(/^(pubky:\/\/|pk:)/i);
             setDisplayPrefix(
               m ? (m[1].toLowerCase() as "pubky://" | "pk:") : ""
             );
-            updateDir(raw);
-            setStore("explorer", true);
+
+            // Treat no trailing slash as "file in dir" for direct preview
+            const stripped = raw
+              .replace(/^pubky:\/\/?/i, "")
+              .replace(/^pk:/i, "");
+            const isBareKey = /^[A-Za-z0-9]{52}$/.test(stripped);
+            const isFileIntent = !stripped.endsWith("/") && !isBareKey;
+
+            if (isFileIntent) {
+              const cut = stripped.lastIndexOf("/");
+              const dir = cut >= 0 ? stripped.slice(0, cut + 1) : stripped;
+              const file = cut >= 0 ? stripped.slice(cut + 1) : "";
+              updateDir(dir, "push");
+              if (file)
+                openPreview(`pubky://${store.dir}${file}`, file, {
+                  updateUrl: true,
+                });
+              setStore("explorer", true);
+            } else {
+              updateDir(stripped, "push");
+              setStore("explorer", true);
+            }
           }}
         >
           <input
-            placeholder="pubky..."
+            placeholder="public key (and file path)"
             value={input()}
             oninput={(e) => updateInput((e.target as HTMLInputElement).value)}
           />
@@ -96,6 +129,7 @@ function App() {
               <input type="checkbox" checked={store.shallow} />
               <label for="s1-14">Shallow</label>
             </div>
+
             <div class="sort-controls">
               <label>Sort</label>
               <select
@@ -118,6 +152,9 @@ function App() {
                 Dirs first
               </label>
             </div>
+
+            <ShareButton />
+
             <button type="submit" disabled={input().length === 0}>
               Explore
             </button>

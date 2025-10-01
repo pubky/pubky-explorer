@@ -1,5 +1,6 @@
 import { Show, onCleanup } from "solid-js";
 import { store, closePreview, downloadFile } from "./state";
+import { ShareButton } from "./ShareButton";
 import "./css/Preview.css";
 
 export default function Preview() {
@@ -23,6 +24,9 @@ export default function Preview() {
               {store.preview.name}
             </div>
             <div class="pv-actions">
+              <ShareButton
+                path={(store.dir + store.preview.name).replace(/\/+$/, "")}
+              />
               <button onClick={() => downloadFile(store.preview.link)}>
                 Download
               </button>

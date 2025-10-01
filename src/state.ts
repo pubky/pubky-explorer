@@ -25,10 +25,8 @@ export const [store, setStore] = createStore<{
   shallow: boolean;
   list: Array<ListItem>;
   error: string | null;
-  // sorting
   sortOrder: "asc" | "desc";
   dirsFirst: boolean;
-  // preview
   preview: PreviewState;
 }>({
   explorer: false,
@@ -40,10 +38,16 @@ export const [store, setStore] = createStore<{
   sortOrder: "asc",
   dirsFirst: true,
   preview: {
-    open: false, link: "", name: "",
-    kind: "other", mime: "", url: null, text: null,
-    loading: false, error: null
-  }
+    open: false,
+    link: "",
+    name: "",
+    kind: "other",
+    mime: "",
+    url: null,
+    text: null,
+    loading: false,
+    error: null,
+  },
 });
 
 // request guard
@@ -89,6 +93,7 @@ export function loadMore() {
   setStore("loading", true);
   setStore("error", null);
 
+  // visible rows rough estimate
   const limit = Math.ceil(window.innerHeight / 40);
 
   const reqId = ++currentRequestId;
@@ -125,20 +130,34 @@ export function loadMore() {
     });
 }
 
-export function updateDir(inputPath: string) {
-  const path = normalizePath(inputPath);
+/**
+ * Navigate to a directory. URL handling can be:
+ *  - 'push'   → pushState (default)
+ *  - 'replace'→ replaceState
+ *  - 'none'   → do not modify URL
+ */
+export function updateDir(
+  inputPath: string,
+  urlMode: "push" | "replace" | "none" = "push",
+) {
+  const path = normalizeDir(inputPath);
 
-  const encoded = encodeURIComponent(path);
-  const currentHash = new URL(window.location.href).hash;
-  const nextHash = `#p=${encoded}`;
-  if (currentHash !== nextHash) {
-    history.pushState({ p: path }, "", nextHash);
+  if (urlMode !== "none") {
+    const encoded = encodeURIComponent(path);
+    const nextHash = `#p=${encoded}`;
+    const currentHash = new URL(window.location.href).hash;
+    if (urlMode === "push") {
+      if (currentHash !== nextHash) history.pushState({ p: path }, "", nextHash);
+    } else {
+      history.replaceState({ p: path }, "", nextHash);
+    }
   }
 
   setStore("dir", path);
   setStore("list", []);
   setStore("error", null);
 
+  // bump request id to invalidate in-flight promises
   currentRequestId++;
   isFetching = false;
 
@@ -173,16 +192,41 @@ export async function downloadFile(link: string) {
   }
 }
 
-// PREVIEW
-export async function openPreview(link: string, name: string) {
-  // reset previous URL to avoid leaks
-  if (store.preview.url) {
-    try { URL.revokeObjectURL(store.preview.url); } catch {}
+/** Open preview and reflect file selection in the URL unless disabled. */
+export async function openPreview(
+  link: string,
+  name: string,
+  opts?: { updateUrl?: boolean },
+) {
+  const shouldUpdateUrl = opts?.updateUrl !== false;
+
+  // reflect file selection in hash as #p=<dir><file> (no trailing slash)
+  if (shouldUpdateUrl) {
+    const filePath = (store.dir + name).replace(/\/+$/, "");
+    const nextHash = `#p=${encodeURIComponent(filePath)}`;
+    const currentHash = new URL(window.location.href).hash;
+    if (currentHash !== nextHash) {
+      history.pushState({ p: filePath, preview: true }, "", nextHash);
+    }
   }
+
+  // reset previous object URL
+  if (store.preview.url) {
+    try {
+      URL.revokeObjectURL(store.preview.url);
+    } catch {}
+  }
+
   setStore("preview", {
-    open: true, link, name,
-    kind: "other", mime: "", url: null, text: null,
-    loading: true, error: null
+    open: true,
+    link,
+    name,
+    kind: "other",
+    mime: "",
+    url: null,
+    text: null,
+    loading: true,
+    error: null,
   });
 
   try {
@@ -193,27 +237,61 @@ export async function openPreview(link: string, name: string) {
     if (mime.startsWith("image/")) {
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
-      setStore("preview", { kind: "image", mime, url, text: null, loading: false } as any);
-    } else if (mime.startsWith("text/") || mime.includes("application/json") || mime.includes("application/xml")) {
+      setStore("preview", {
+        kind: "image",
+        mime,
+        url,
+        text: null,
+        loading: false,
+      } as any);
+    } else if (
+      mime.startsWith("text/") ||
+      mime.includes("application/json") ||
+      mime.includes("application/xml")
+    ) {
       const text = await res.text();
-      setStore("preview", { kind: "text", mime, text, url: null, loading: false } as any);
+      setStore("preview", {
+        kind: "text",
+        mime,
+        text,
+        url: null,
+        loading: false,
+      } as any);
     } else {
       setStore("preview", { kind: "other", mime, loading: false } as any);
     }
   } catch (e: any) {
-    setStore("preview", { error: e?.message || "Preview failed", loading: false } as any);
+    setStore("preview", {
+      error: e?.message || "Preview failed",
+      loading: false,
+    } as any);
   }
 }
 
 export function closePreview() {
   if (store.preview.url) {
-    try { URL.revokeObjectURL(store.preview.url); } catch {}
+    try {
+      URL.revokeObjectURL(store.preview.url);
+    } catch {}
   }
   setStore("preview", {
-    open: false, link: "", name: "",
-    kind: "other", mime: "", url: null, text: null,
-    loading: false, error: null
+    open: false,
+    link: "",
+    name: "",
+    kind: "other",
+    mime: "",
+    url: null,
+    text: null,
+    loading: false,
+    error: null,
   });
+
+  // restore hash to directory form (#p=<dir>/)
+  const dirHash = `#p=${encodeURIComponent(store.dir)}`;
+  const currentHash = new URL(window.location.href).hash;
+  if (currentHash !== dirHash) {
+    history.pushState({ p: store.dir }, "", dirHash);
+  }
 }
 
 // --- helpers ---
@@ -228,7 +306,18 @@ function sortItems(items: ListItem[]): ListItem[] {
   });
 }
 
-function normalizePath(raw: string): string {
+/** Normalize a directory path (always ends with '/'). */
+function normalizeDir(raw: string): string {
+  let path = stripPrefixesAndResolve(raw);
+
+  // Homeserver doesn't support reading root; 52-char key ⇒ append /pub/
+  if (path.length === 52) path = path + "/pub/";
+  if (!path.endsWith("/")) path = path + "/";
+  return path;
+}
+
+/** Strip pubky:// or pk: and resolve ., .. and any accidental protocol/host. */
+function stripPrefixesAndResolve(raw: string): string {
   let path = (raw || "").trim();
 
   path = path.replace(/^pubky:\/\/?/i, "").replace(/^pk:/i, "");
@@ -244,14 +333,13 @@ function normalizePath(raw: string): string {
   const stack: string[] = [];
   for (const seg of parts) {
     if (seg === ".") continue;
-    if (seg === "..") { if (stack.length > 0) stack.pop(); continue; }
+    if (seg === "..") {
+      if (stack.length > 0) stack.pop();
+      continue;
+    }
     stack.push(seg);
   }
-  path = stack.join("/");
-
-  if (path.length === 52) path = path + "/pub/";
-  if (!path.endsWith("/")) path = path + "/";
-  return path;
+  return stack.join("/");
 }
 
 function normalizeError(e: any): string {

@@ -9,7 +9,7 @@ export function Explorer() {
 
   function focusItem(i: number) {
     const items = Array.from(
-      document.querySelectorAll<HTMLButtonElement>("li.file > button")
+      document.querySelectorAll<HTMLButtonElement>("li.file > button"),
     );
     if (items.length === 0) return;
     const idx = Math.max(0, Math.min(i, items.length - 1));
@@ -24,7 +24,7 @@ export function Explorer() {
           loadMore();
         }
       },
-      { root: null, rootMargin: "10px", threshold: 0.5 }
+      { root: null, rootMargin: "10px", threshold: 0.5 },
     );
 
     if (loadMoreRef) observer.observe(loadMoreRef);
@@ -50,7 +50,7 @@ export function Explorer() {
       } else if (e.key === "Enter") {
         e.preventDefault();
         const items = Array.from(
-          document.querySelectorAll<HTMLButtonElement>("li.file > button")
+          document.querySelectorAll<HTMLButtonElement>("li.file > button"),
         );
         if (items[selected()]) items[selected()].click();
       } else if (e.key === "Backspace") {
