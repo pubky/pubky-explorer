@@ -10,12 +10,14 @@ export const [store, setStore] = createStore<{
   loading: boolean;
   shallow: boolean;
   list: Array<{ link: string; name: string; isDirectory: boolean }>;
+  error?: string | null;
 }>({
   explorer: false,
   dir: "",
   loading: false,
   shallow: true,
   list: [],
+  error: null,
 });
 
 export function resetStore() {
@@ -23,6 +25,7 @@ export function resetStore() {
   setStore("loading", false);
   setStore("list", []);
   setStore("explorer", false);
+  setStore("error", null);
 }
 
 export function loadList() {
@@ -38,14 +41,13 @@ export function switchShallow() {
 }
 
 export function loadMore() {
-  // @ts-ignore
-  const cursor = (store.list.length > 0 && store.list[store.list.length - 1])[
-    "link"
-  ];
+  const cursor =
+    store.list.length > 0 ? store.list[store.list.length - 1].link : "";
 
   let path = store.dir;
 
   setStore("loading", true);
+  setStore("error", null);
 
   // ITEMS IN VIEW
   let limit = Math.ceil(window.innerHeight / 40);
@@ -81,6 +83,7 @@ export function loadMore() {
     })
     .catch((e: String) => {
       setStore("loading", false);
+      setStore("error", typeof e === "string" ? e : "Unknown error");
       if (e === "error sending request") {
         console.log(e, ": cannot reach homeserver or pk does not exist");
       } else {
@@ -90,7 +93,23 @@ export function loadMore() {
 }
 
 export function updateDir(path: string) {
-  path = path?.split("://")[1] || path;
+  // Normalize accepted prefixes and forms:
+  // - pubky://<key|path>
+  // - pk:<key|path>
+  // - <key|path>
+  // - relative segments when already in explorer
+  path = (path || "").trim();
+  // strip known prefixes
+  path = path.replace(/^pubky:\/\/?/i, "").replace(/^pk:/i, "");
+  // if user passed an absolute URL after prefix removal, drop protocol/host if any
+  try {
+    if (/^[a-z]+:\/\//i.test(path)) {
+      const u = new URL(path);
+      path = (u.host + u.pathname).replace(/^\/+/, "");
+    }
+  } catch {
+    /* noop */
+  }
 
   let parts = path.split("/").filter(Boolean);
 
@@ -110,6 +129,8 @@ export function updateDir(path: string) {
   }
 
   setStore("dir", path);
+  setStore("list", []);
+  setStore("error", null);
   loadList();
 }
 
@@ -137,6 +158,10 @@ export async function downloadFile(link: string) {
     element.remove();
   } catch (err: unknown) {
     console.error("Error fetching file:", err);
+    setStore(
+      "error",
+      err instanceof Error ? err.message : "Failed to fetch file",
+    );
   } finally {
     setStore("loading", false);
   }

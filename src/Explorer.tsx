@@ -15,7 +15,7 @@ export function Explorer() {
       {
         root: null, // use the viewport
         rootMargin: "10px",
-        threshold: 1.0,
+        threshold: 0.5,
       },
     );
 
@@ -34,6 +34,8 @@ export function Explorer() {
     <div class="explorer">
       <div class="explorer">
         <DirectoryButtons></DirectoryButtons>
+
+        <ShowErrorOrEmpty />
 
         <ul>
           <For each={store.list}>
@@ -98,5 +100,16 @@ function DirectoryButtons() {
         )}
       </For>
     </div>
+  );
+}
+
+function ShowErrorOrEmpty() {
+  const hasEmpty = () =>
+    !store.loading && !store.error && store.list.length === 0;
+  return (
+    <>
+      {store.error && <div class="status error">Error: {store.error}</div>}
+      {hasEmpty() && <div class="status empty">No results.</div>}
+    </>
   );
 }

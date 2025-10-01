@@ -9,25 +9,13 @@ function App() {
   let [input, setInput] = createSignal("");
 
   function updateInput(value: string) {
-    if (store.dir.length == 0) {
-      try {
-        let pubky = value;
-
-        if (!pubky.startsWith("pubky://")) {
-          if (pubky.length < 52) {
-            throw new Error("Pubky should be 52 characters at least");
-          }
-
-          pubky = "pubky://" + store.dir;
-        }
-
-        new URL(pubky);
-
-        setInput(value);
-      } catch (_) {}
-    } else {
+    // Accept pk:, pubky://, or bare key/path; minimal client-side guard for obviously invalid short keys
+    if (/^([a-z0-9]{0,51})$/i.test(value.trim())) {
+      // too short to be a key but might be a path; allow typing to proceed
       setInput(value);
+      return;
     }
+    setInput(value);
   }
 
   return (
@@ -35,7 +23,7 @@ function App() {
       <Spinner></Spinner>
       <div class="head">
         <div>
-          <a href="https://github.com/pubky/pubky" target="_blank">
+          <a href="https://pubky.app" target="_blank" rel="noopener noreferrer">
             <img src={pubkyLogo} class="logo" alt="Pubky logo" />
           </a>
         </div>
@@ -51,7 +39,9 @@ function App() {
           onsubmit={(e) => {
             e.preventDefault();
 
-            updateDir(store.dir + input());
+            setStore("error", null);
+            setStore("list", []);
+            updateDir(input());
 
             setStore("explorer", true);
             setInput("");
@@ -79,7 +69,13 @@ function App() {
       <div class="home-container">
         <div class="home">
           <p class="read-the-docs">
-            Click on the Pubky logo to visit the Github repository.
+            <a
+              href="https://github.com/pubky/pubky-explorer"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Check out the Pubky Explorer codebase.
+            </a>
           </p>
         </div>
       </div>
