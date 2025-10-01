@@ -2,25 +2,47 @@ import pubkyLogo from "/pubky.svg";
 import "./css/App.css";
 import { Explorer } from "./Explorer.tsx";
 import { Spinner } from "./Spinner.tsx";
-import { Show, createSignal } from "solid-js";
+import { Show, createSignal, onMount, onCleanup } from "solid-js";
 import { store, setStore, updateDir, switchShallow } from "./state.ts";
 
 function App() {
-  let [input, setInput] = createSignal("");
+  const [input, setInput] = createSignal("");
 
   function updateInput(value: string) {
-    // Accept pk:, pubky://, or bare key/path; minimal client-side guard for obviously invalid short keys
-    if (/^([a-z0-9]{0,51})$/i.test(value.trim())) {
-      // too short to be a key but might be a path; allow typing to proceed
-      setInput(value);
-      return;
-    }
     setInput(value);
   }
 
+  onMount(() => {
+    // hydrate from URL (#p= or ?p=)
+    const url = new URL(window.location.href);
+    const hashP = url.hash.startsWith("#p=")
+      ? decodeURIComponent(url.hash.slice(3))
+      : null;
+    const queryP = url.searchParams.get("p");
+    const path = hashP || queryP;
+    if (path && path.trim().length > 0) {
+      setStore("explorer", true);
+      updateDir(path);
+    }
+    const onPop = () => {
+      const u = new URL(window.location.href);
+      const hp = u.hash.startsWith("#p=")
+        ? decodeURIComponent(u.hash.slice(3))
+        : null;
+      const qp = u.searchParams.get("p");
+      const p = hp || qp || "";
+      if (p) {
+        setStore("explorer", true);
+        updateDir(p);
+      }
+    };
+    window.addEventListener("popstate", onPop);
+    onCleanup(() => window.removeEventListener("popstate", onPop));
+  });
+
   return (
     <>
-      <Spinner></Spinner>
+      <Spinner />
       <div class="head">
         <div>
           <a href="https://pubky.app" target="_blank" rel="noopener noreferrer">
@@ -38,23 +60,21 @@ function App() {
           class="form"
           onsubmit={(e) => {
             e.preventDefault();
-
             setStore("error", null);
             setStore("list", []);
             updateDir(input());
-
             setStore("explorer", true);
             setInput("");
           }}
         >
           <input
-            placeholder="pubky://o4dksfbqk85ogzdb5osziw6befigbuxmuxkuxq8434q89uj56uyy"
+            placeholder="pubky://o4dksf...89uj56uyy"
             value={input()}
-            oninput={(e) => updateInput(e.target.value)}
-          ></input>
+            oninput={(e) => updateInput((e.target as HTMLInputElement).value)}
+          />
           <div class="form-buttons">
             <div class="checkbox-wrapper" onClick={switchShallow}>
-              <input type="checkbox" checked={store.shallow}></input>
+              <input type="checkbox" checked={store.shallow} />
               <label for="s1-14">Shallow</label>
             </div>
             <button type="submit" disabled={input().length === 0}>
@@ -64,7 +84,7 @@ function App() {
         </form>
       </div>
       <Show when={store.explorer}>
-        <Explorer></Explorer>
+        <Explorer />
       </Show>
       <div class="home-container">
         <div class="home">
