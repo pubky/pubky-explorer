@@ -1,9 +1,20 @@
 import "./css/Explorer.css";
-import { For, onCleanup, onMount } from "solid-js";
+import { For, onCleanup, onMount, createSignal, createEffect } from "solid-js";
 import { store, updateDir, downloadFile, loadMore } from "./state.ts";
 
 export function Explorer() {
   let loadMoreRef: Element | undefined = undefined;
+  const [selected, setSelected] = createSignal(0);
+
+  function focusItem(i: number) {
+    const items = Array.from(
+      document.querySelectorAll<HTMLButtonElement>("li.file > button"),
+    );
+    if (items.length === 0) return;
+    const idx = Math.max(0, Math.min(i, items.length - 1));
+    items[idx].focus();
+    setSelected(idx);
+  }
 
   onMount(() => {
     const observer = new IntersectionObserver(
@@ -12,31 +23,72 @@ export function Explorer() {
           loadMore();
         }
       },
-      {
-        root: null, // use the viewport
-        rootMargin: "10px",
-        threshold: 0.5,
-      },
+      { root: null, rootMargin: "10px", threshold: 0.5 },
     );
 
-    if (loadMoreRef) {
-      observer.observe(loadMoreRef);
-    }
+    if (loadMoreRef) observer.observe(loadMoreRef);
+    onCleanup(() => observer.disconnect());
 
-    onCleanup(() => {
-      if (loadMoreRef) {
-        observer.unobserve(loadMoreRef);
+    const onKey = (e: KeyboardEvent) => {
+      if (!store.explorer) return;
+      // ignore when typing in inputs
+      const t = e.target as HTMLElement | null;
+      if (
+        t &&
+        (t.tagName === "INPUT" ||
+          t.tagName === "TEXTAREA" ||
+          (t as any).isContentEditable)
+      )
+        return;
+
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        focusItem(selected() + 1);
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        focusItem(selected() - 1);
+      } else if (e.key === "Enter") {
+        e.preventDefault();
+        const items = Array.from(
+          document.querySelectorAll<HTMLButtonElement>("li.file > button"),
+        );
+        if (items[selected()]) items[selected()].click();
+      } else if (e.key === "Backspace") {
+        e.preventDefault();
+        const dir = store.dir.replace(/\/+$/, "").split("/");
+        if (dir.length > 1) {
+          const parent = dir.slice(0, -1).join("/") + "/";
+          updateDir(parent);
+          setSelected(0);
+        }
+      } else if (e.key === "/") {
+        e.preventDefault();
+        const input =
+          document.querySelector<HTMLInputElement>("form.form input");
+        if (input) input.focus();
       }
-    });
+    };
+
+    window.addEventListener("keydown", onKey);
+    onCleanup(() => window.removeEventListener("keydown", onKey));
+  });
+
+  createEffect(() => {
+    // when list changes, keep focus within bounds
+    const len = store.list.length;
+    if (len === 0) return;
+    if (selected() >= len) setSelected(len - 1);
+    // focus first item on fresh load
+    if (document.activeElement?.tagName !== "INPUT") {
+      focusItem(selected());
+    }
   });
 
   return (
     <div class="explorer">
       <div class="explorer">
-        <DirectoryButtons></DirectoryButtons>
-
+        <DirectoryButtons />
         <ShowErrorOrEmpty />
-
         <ul>
           <For each={store.list}>
             {({ link, name, isDirectory }, _) => (
@@ -62,28 +114,24 @@ export function Explorer() {
             )}
           </For>
         </ul>
-        <div ref={loadMoreRef}></div>
+        <div ref={loadMoreRef as any}></div>
       </div>
     </div>
   );
 }
 
 function DirectoryButtons() {
-  let buttons = () => {
-    let parts = store.dir.split("/").filter(Boolean);
-
-    let buttons = parts.map((text, i) => {
-      let btn = { text: "", path: "" };
-
-      btn.text = i == 0 ? text.slice(0, 4) + ".." + text.slice(48, 52) : text;
-
-      btn.path = parts.slice(0, i + 1).join("/") + "/";
-
-      return btn;
-    });
-
+  function buttons() {
+    const root = store.dir.split("/");
+    let previous = "";
+    let buttons: Array<{ text: string; path: string }> = [];
+    for (let part of root) {
+      if (part.length == 0) continue;
+      previous += part + "/";
+      buttons.push({ text: part, path: previous });
+    }
     return buttons;
-  };
+  }
 
   return (
     <div class="path">
