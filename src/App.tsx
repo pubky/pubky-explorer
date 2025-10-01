@@ -93,7 +93,7 @@ function App() {
             const raw = input().trim();
             const m = raw.match(/^(pubky:\/\/|pk:)/i);
             setDisplayPrefix(
-              m ? (m[1].toLowerCase() as "pubky://" | "pk:") : ""
+              m ? (m[1].toLowerCase() as "pubky://" | "pk:") : "",
             );
 
             // Treat no trailing slash as "file in dir" for direct preview
@@ -136,7 +136,7 @@ function App() {
                 value={store.sortOrder}
                 onChange={(e) =>
                   setSort(
-                    (e.target as HTMLSelectElement).value as "asc" | "desc"
+                    (e.target as HTMLSelectElement).value as "asc" | "desc",
                   )
                 }
               >

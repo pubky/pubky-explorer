@@ -55,8 +55,8 @@ export function ShareButton(props: Props) {
       {ok() === "copied"
         ? "Copied"
         : ok() === "error"
-        ? "Error"
-        : props.label ?? "Share"}
+          ? "Error"
+          : (props.label ?? "Share")}
     </button>
   );
 }

@@ -1,6 +1,13 @@
 import "./css/Explorer.css";
 import { For, onCleanup, onMount, createSignal, createEffect } from "solid-js";
-import { store, updateDir, openPreview, loadMore } from "./state.ts";
+import {
+  store,
+  updateDir,
+  openPreview,
+  loadMore,
+  prefetchDir,
+  cacheSaveScroll,
+} from "./state.ts";
 import Preview from "./Preview";
 
 export function Explorer() {
@@ -15,6 +22,12 @@ export function Explorer() {
     const idx = Math.max(0, Math.min(i, items.length - 1));
     items[idx].focus();
     setSelected(idx);
+
+    // prefetch on keyboard highlight if directory
+    const entry = store.list[idx];
+    if (entry?.isDirectory) {
+      prefetchDir(store.dir + entry.name);
+    }
   }
 
   onMount(() => {
@@ -58,9 +71,16 @@ export function Explorer() {
         const dir = store.dir.replace(/\/+$/, "").split("/");
         if (dir.length > 1) {
           const parent = dir.slice(0, -1).join("/") + "/";
+          cacheSaveScroll();
           updateDir(parent);
           setSelected(0);
         }
+      } else if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        history.back();
+      } else if (e.key === "ArrowRight") {
+        e.preventDefault();
+        history.forward();
       } else if (e.key === "/") {
         e.preventDefault();
         const input =
@@ -92,9 +112,15 @@ export function Explorer() {
             {({ link, name, isDirectory }) => (
               <li class="file">
                 <button
+                  onMouseEnter={() => {
+                    if (isDirectory) prefetchDir(store.dir + name);
+                  }}
+                  onFocus={() => {
+                    if (isDirectory) prefetchDir(store.dir + name);
+                  }}
                   onClick={() =>
                     isDirectory
-                      ? updateDir(store.dir + name)
+                      ? (cacheSaveScroll(), updateDir(store.dir + name))
                       : openPreview(link, name)
                   }
                 >
@@ -139,6 +165,7 @@ function DirectoryButtons() {
           <button
             disabled={i() === buttons().length - 1 || buttons().length == 2}
             onclick={() => {
+              cacheSaveScroll();
               updateDir(path);
             }}
           >
