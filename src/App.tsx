@@ -7,11 +7,15 @@ import { store, setStore, updateDir, switchShallow } from "./state.ts";
 
 function App() {
   const [input, setInput] = createSignal("");
+  const [displayPrefix, setDisplayPrefix] = createSignal<
+    "" | "pubky://" | "pk:"
+  >("");
 
-  // keep the address bar in sync with the current directory at all times
+  // keep input mirrored to the current path; only add a prefix if the user used one
   createEffect(() => {
     const path = store.dir;
-    setInput(path ? `pubky://${path}` : "");
+    const prefix = displayPrefix();
+    setInput(path ? (prefix ? prefix + path : path) : "");
   });
 
   function updateInput(value: string) {
@@ -68,13 +72,20 @@ function App() {
             e.preventDefault();
             setStore("error", null);
             setStore("list", []);
-            // do not clear input; the effect above will sync it to the new path after navigation
-            updateDir(input());
+
+            // remember the user’s original scheme (or lack thereof)
+            const raw = input().trim();
+            const m = raw.match(/^(pubky:\/\/|pk:)/i);
+            setDisplayPrefix(
+              m ? (m[1].toLowerCase() as "pubky://" | "pk:") : ""
+            );
+
+            updateDir(raw);
             setStore("explorer", true);
           }}
         >
           <input
-            placeholder="pubky://o4dksf...89uj56uyy or pk:o4dksf... or bare key"
+            placeholder="pubky goes here"
             value={input()}
             oninput={(e) => updateInput((e.target as HTMLInputElement).value)}
           />
