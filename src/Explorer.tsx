@@ -1,6 +1,7 @@
 import "./css/Explorer.css";
 import { For, onCleanup, onMount, createSignal, createEffect } from "solid-js";
-import { store, updateDir, downloadFile, loadMore } from "./state.ts";
+import { store, updateDir, openPreview, loadMore } from "./state.ts";
+import Preview from "./Preview";
 
 export function Explorer() {
   let loadMoreRef: Element | undefined = undefined;
@@ -8,7 +9,7 @@ export function Explorer() {
 
   function focusItem(i: number) {
     const items = Array.from(
-      document.querySelectorAll<HTMLButtonElement>("li.file > button"),
+      document.querySelectorAll<HTMLButtonElement>("li.file > button")
     );
     if (items.length === 0) return;
     const idx = Math.max(0, Math.min(i, items.length - 1));
@@ -23,7 +24,7 @@ export function Explorer() {
           loadMore();
         }
       },
-      { root: null, rootMargin: "10px", threshold: 0.5 },
+      { root: null, rootMargin: "10px", threshold: 0.5 }
     );
 
     if (loadMoreRef) observer.observe(loadMoreRef);
@@ -31,7 +32,6 @@ export function Explorer() {
 
     const onKey = (e: KeyboardEvent) => {
       if (!store.explorer) return;
-      // ignore when typing in inputs
       const t = e.target as HTMLElement | null;
       if (
         t &&
@@ -50,7 +50,7 @@ export function Explorer() {
       } else if (e.key === "Enter") {
         e.preventDefault();
         const items = Array.from(
-          document.querySelectorAll<HTMLButtonElement>("li.file > button"),
+          document.querySelectorAll<HTMLButtonElement>("li.file > button")
         );
         if (items[selected()]) items[selected()].click();
       } else if (e.key === "Backspace") {
@@ -74,11 +74,9 @@ export function Explorer() {
   });
 
   createEffect(() => {
-    // when list changes, keep focus within bounds
     const len = store.list.length;
     if (len === 0) return;
     if (selected() >= len) setSelected(len - 1);
-    // focus first item on fresh load
     if (document.activeElement?.tagName !== "INPUT") {
       focusItem(selected());
     }
@@ -91,13 +89,13 @@ export function Explorer() {
         <ShowErrorOrEmpty />
         <ul>
           <For each={store.list}>
-            {({ link, name, isDirectory }, _) => (
+            {({ link, name, isDirectory }) => (
               <li class="file">
                 <button
                   onClick={() =>
                     isDirectory
                       ? updateDir(store.dir + name)
-                      : downloadFile(link)
+                      : openPreview(link, name)
                   }
                 >
                   <span class="icon">{isDirectory ? "📁" : "📄"}</span>
@@ -116,6 +114,7 @@ export function Explorer() {
         </ul>
         <div ref={loadMoreRef as any}></div>
       </div>
+      <Preview />
     </div>
   );
 }

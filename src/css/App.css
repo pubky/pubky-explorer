@@ -142,3 +142,25 @@
 .checkbox-wrappe input:checked:hover {
   background-color: #535db3;
 }
+
+
+/* sorting controls */
+.sort-controls {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  margin-right: auto;
+  margin-left: 1rem;
+}
+
+.sort-controls select {
+  padding: .45rem .6rem;
+  border-radius: 8px;
+  background: inherit;
+}
+
+.sort-controls .dirs-first {
+  display: inline-flex;
+  align-items: center;
+  gap: .25rem;
+}

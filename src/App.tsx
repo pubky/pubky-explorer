@@ -3,7 +3,14 @@ import "./css/App.css";
 import { Explorer } from "./Explorer.tsx";
 import { Spinner } from "./Spinner.tsx";
 import { Show, createSignal, onMount, onCleanup, createEffect } from "solid-js";
-import { store, setStore, updateDir, switchShallow } from "./state.ts";
+import {
+  store,
+  setStore,
+  updateDir,
+  switchShallow,
+  setSort,
+  toggleDirsFirst,
+} from "./state.ts";
 
 function App() {
   const [input, setInput] = createSignal("");
@@ -11,7 +18,6 @@ function App() {
     "" | "pubky://" | "pk:"
   >("");
 
-  // keep input mirrored to the current path; only add a prefix if the user used one
   createEffect(() => {
     const path = store.dir;
     const prefix = displayPrefix();
@@ -23,7 +29,6 @@ function App() {
   }
 
   onMount(() => {
-    // hydrate from URL (#p= or ?p=)
     const url = new URL(window.location.href);
     const hashP = url.hash.startsWith("#p=")
       ? decodeURIComponent(url.hash.slice(3))
@@ -72,20 +77,17 @@ function App() {
             e.preventDefault();
             setStore("error", null);
             setStore("list", []);
-
-            // remember the user’s original scheme (or lack thereof)
             const raw = input().trim();
             const m = raw.match(/^(pubky:\/\/|pk:)/i);
             setDisplayPrefix(
               m ? (m[1].toLowerCase() as "pubky://" | "pk:") : ""
             );
-
             updateDir(raw);
             setStore("explorer", true);
           }}
         >
           <input
-            placeholder="pubky goes here"
+            placeholder="pubky..."
             value={input()}
             oninput={(e) => updateInput((e.target as HTMLInputElement).value)}
           />
@@ -93,6 +95,28 @@ function App() {
             <div class="checkbox-wrapper" onClick={switchShallow}>
               <input type="checkbox" checked={store.shallow} />
               <label for="s1-14">Shallow</label>
+            </div>
+            <div class="sort-controls">
+              <label>Sort</label>
+              <select
+                value={store.sortOrder}
+                onChange={(e) =>
+                  setSort(
+                    (e.target as HTMLSelectElement).value as "asc" | "desc"
+                  )
+                }
+              >
+                <option value="asc">A–Z</option>
+                <option value="desc">Z–A</option>
+              </select>
+              <label class="dirs-first">
+                <input
+                  type="checkbox"
+                  checked={store.dirsFirst}
+                  onChange={toggleDirsFirst}
+                />
+                Dirs first
+              </label>
             </div>
             <button type="submit" disabled={input().length === 0}>
               Explore

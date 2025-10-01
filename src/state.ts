@@ -6,6 +6,18 @@ export const client =
 
 export type ListItem = { link: string; name: string; isDirectory: boolean };
 
+type PreviewState = {
+  open: boolean;
+  link: string;
+  name: string;
+  kind: "image" | "text" | "other";
+  mime: string;
+  url: string | null;
+  text: string | null;
+  loading: boolean;
+  error: string | null;
+};
+
 export const [store, setStore] = createStore<{
   explorer: boolean;
   dir: string;
@@ -13,6 +25,11 @@ export const [store, setStore] = createStore<{
   shallow: boolean;
   list: Array<ListItem>;
   error: string | null;
+  // sorting
+  sortOrder: "asc" | "desc";
+  dirsFirst: boolean;
+  // preview
+  preview: PreviewState;
 }>({
   explorer: false,
   dir: "",
@@ -20,6 +37,13 @@ export const [store, setStore] = createStore<{
   shallow: true,
   list: [],
   error: null,
+  sortOrder: "asc",
+  dirsFirst: true,
+  preview: {
+    open: false, link: "", name: "",
+    kind: "other", mime: "", url: null, text: null,
+    loading: false, error: null
+  }
 });
 
 // request guard
@@ -32,6 +56,16 @@ export function resetStore() {
   setStore("list", []);
   setStore("explorer", false);
   setStore("error", null);
+}
+
+export function setSort(order: "asc" | "desc") {
+  setStore("sortOrder", order);
+  if (store.list.length) setStore("list", sortItems([...store.list]));
+}
+
+export function toggleDirsFirst() {
+  setStore("dirsFirst", !store.dirsFirst);
+  if (store.list.length) setStore("list", sortItems([...store.list]));
 }
 
 export function loadList() {
@@ -55,7 +89,6 @@ export function loadMore() {
   setStore("loading", true);
   setStore("error", null);
 
-  // visible rows rough estimate
   const limit = Math.ceil(window.innerHeight / 40);
 
   const reqId = ++currentRequestId;
@@ -75,7 +108,8 @@ export function loadMore() {
       for (let item of store.list) map.set(item.name, item);
       for (let item of list) map.set(item.name, item);
 
-      setStore("list", Array.from(map.values()));
+      const merged = Array.from(map.values());
+      setStore("list", sortItems(merged));
       setStore("dir", path);
     })
     .catch((e: any) => {
@@ -94,7 +128,6 @@ export function loadMore() {
 export function updateDir(inputPath: string) {
   const path = normalizePath(inputPath);
 
-  // push to URL for deep-linking
   const encoded = encodeURIComponent(path);
   const currentHash = new URL(window.location.href).hash;
   const nextHash = `#p=${encoded}`;
@@ -106,7 +139,6 @@ export function updateDir(inputPath: string) {
   setStore("list", []);
   setStore("error", null);
 
-  // bump request id to invalidate in-flight promises
   currentRequestId++;
   isFetching = false;
 
@@ -141,38 +173,82 @@ export async function downloadFile(link: string) {
   }
 }
 
+// PREVIEW
+export async function openPreview(link: string, name: string) {
+  // reset previous URL to avoid leaks
+  if (store.preview.url) {
+    try { URL.revokeObjectURL(store.preview.url); } catch {}
+  }
+  setStore("preview", {
+    open: true, link, name,
+    kind: "other", mime: "", url: null, text: null,
+    loading: true, error: null
+  });
+
+  try {
+    const res = await client.fetch(link);
+    if (!res.ok) throw new Error(`Failed to fetch file: ${res.status}`);
+    const mime = (res.headers.get("content-type") || "").toLowerCase();
+
+    if (mime.startsWith("image/")) {
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      setStore("preview", { kind: "image", mime, url, text: null, loading: false } as any);
+    } else if (mime.startsWith("text/") || mime.includes("application/json") || mime.includes("application/xml")) {
+      const text = await res.text();
+      setStore("preview", { kind: "text", mime, text, url: null, loading: false } as any);
+    } else {
+      setStore("preview", { kind: "other", mime, loading: false } as any);
+    }
+  } catch (e: any) {
+    setStore("preview", { error: e?.message || "Preview failed", loading: false } as any);
+  }
+}
+
+export function closePreview() {
+  if (store.preview.url) {
+    try { URL.revokeObjectURL(store.preview.url); } catch {}
+  }
+  setStore("preview", {
+    open: false, link: "", name: "",
+    kind: "other", mime: "", url: null, text: null,
+    loading: false, error: null
+  });
+}
+
 // --- helpers ---
+
+function sortItems(items: ListItem[]): ListItem[] {
+  const mult = store.sortOrder === "asc" ? 1 : -1;
+  return items.sort((a, b) => {
+    if (store.dirsFirst && a.isDirectory !== b.isDirectory) {
+      return a.isDirectory ? -1 : 1;
+    }
+    return a.name.localeCompare(b.name) * mult;
+  });
+}
 
 function normalizePath(raw: string): string {
   let path = (raw || "").trim();
 
-  // strip accepted prefixes
   path = path.replace(/^pubky:\/\/?/i, "").replace(/^pk:/i, "");
 
-  // drop protocol/host if a full URL sneaks in
   try {
     if (/^[a-z]+:\/\//i.test(path)) {
       const u = new URL(path);
       path = (u.host + u.pathname).replace(/^\/+/, "");
     }
-  } catch {
-    /* ignore */
-  }
+  } catch {}
 
-  // split and resolve ., ..
   const parts = path.split("/").filter((x) => x.length > 0);
   const stack: string[] = [];
   for (const seg of parts) {
     if (seg === ".") continue;
-    if (seg === "..") {
-      if (stack.length > 0) stack.pop();
-      continue;
-    }
+    if (seg === "..") { if (stack.length > 0) stack.pop(); continue; }
     stack.push(seg);
   }
   path = stack.join("/");
 
-  // Homeserver doesn't support reading root; 52-char key ⇒ append /pub/
   if (path.length === 52) path = path + "/pub/";
   if (!path.endsWith("/")) path = path + "/";
   return path;
