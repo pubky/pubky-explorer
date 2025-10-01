@@ -2,11 +2,17 @@ import pubkyLogo from "/pubky.svg";
 import "./css/App.css";
 import { Explorer } from "./Explorer.tsx";
 import { Spinner } from "./Spinner.tsx";
-import { Show, createSignal, onMount, onCleanup } from "solid-js";
+import { Show, createSignal, onMount, onCleanup, createEffect } from "solid-js";
 import { store, setStore, updateDir, switchShallow } from "./state.ts";
 
 function App() {
   const [input, setInput] = createSignal("");
+
+  // keep the address bar in sync with the current directory at all times
+  createEffect(() => {
+    const path = store.dir;
+    setInput(path ? `pubky://${path}` : "");
+  });
 
   function updateInput(value: string) {
     setInput(value);
@@ -62,13 +68,13 @@ function App() {
             e.preventDefault();
             setStore("error", null);
             setStore("list", []);
+            // do not clear input; the effect above will sync it to the new path after navigation
             updateDir(input());
             setStore("explorer", true);
-            setInput("");
           }}
         >
           <input
-            placeholder="pubky://o4dksf...89uj56uyy"
+            placeholder="pubky://o4dksf...89uj56uyy or pk:o4dksf... or bare key"
             value={input()}
             oninput={(e) => updateInput((e.target as HTMLInputElement).value)}
           />
