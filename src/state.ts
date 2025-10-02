@@ -301,27 +301,28 @@ export async function openPreview(
       return;
     }
 
-    // 3) Heuristic for mislabeled JSON served as octet-stream
+    // 3) Try JSON.parse for mislabeled octet-stream
     if (
       mime === "application/octet-stream" ||
       mime === "binary/octet-stream" ||
       mime === ""
     ) {
       const blob = await res.blob();
-      const head = await blob.slice(0, 128).text().catch(() => "");
-      const first = head.replace(/^\uFEFF/, "").trim().charAt(0);
-      if (first === "{" || first === "[") {
-        const text = await blob.text();
+      const text = await blob.text();
+      const trimmed = text.replace(/^\uFEFF/, "").trim();
+      try {
+        const parsed = JSON.parse(trimmed);
         setStore("preview", {
           kind: "text",
           mime: "application/json",
-          text,
+          text: JSON.stringify(parsed, null, 2),
           url: null,
           loading: false,
         } as any);
         return;
+      } catch {
+        // not JSON -> fall through to unknown/binary
       }
-      // fall through to unknown/binary
     }
 
     setStore("preview", { kind: "other", mime, loading: false } as any);
@@ -332,7 +333,6 @@ export async function openPreview(
     } as any);
   }
 }
-
 
 export function closePreview() {
   if (store.preview.url) {

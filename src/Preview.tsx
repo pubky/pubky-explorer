@@ -34,7 +34,7 @@ function syntaxHighlightJSON(pretty: string) {
       const key = full.slice(0, cut);
       const colon = full.slice(cut);
       out += `<span class="${cls}">${escapeHtml(key)}</span>${escapeHtml(
-        colon
+        colon,
       )}`;
     } else {
       out += `<span class="${cls}">${escapeHtml(full)}</span>`;
@@ -117,8 +117,8 @@ export default function Preview() {
                         JSON.stringify(
                           JSON.parse(store.preview.text || "{}"),
                           null,
-                          2
-                        )
+                          2,
+                        ),
                       )
                     : prettyJsonHTML(store.preview.text);
                   return html ? (
