@@ -79,3 +79,18 @@
   padding: 1rem;
   opacity: 0.85;
 }
+
+/* JSON syntax colors */
+.pv-json .key     { color: #9cdcfe; }   /* bluish */
+.pv-json .string  { color: #ce9178; }   /* orange */
+.pv-json .number  { color: #b5cea8; }   /* green */
+.pv-json .boolean { color: #569cd6; }   /* blue */
+.pv-json .null    { color: #c586c0; }   /* purple */
+
+@media (prefers-color-scheme: light) {
+  .pv-json .key     { color: #245b8a; }
+  .pv-json .string  { color: #9c3d24; }
+  .pv-json .number  { color: #2f6f3a; }
+  .pv-json .boolean { color: #1a4c7a; }
+  .pv-json .null    { color: #6b2a82; }
+}
