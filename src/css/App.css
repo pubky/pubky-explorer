@@ -163,3 +163,43 @@
   align-items: center;
   gap: 0.25rem;
 }
+
+/* mobile-first: wrap tools under the input */
+.form-buttons {
+  flex-wrap: wrap;
+  row-gap: 0.5rem;        /* vertical spacing when wrapped */
+}
+
+/* keep the toggle compact; don't push others off-screen */
+.checkbox-wrapper {
+  flex: 0 0 auto;         /* overrides earlier flex-grow */
+}
+
+/* put sort controls on their own row on narrow screens */
+.sort-controls {
+  flex: 1 1 100%;
+  order: 3;
+  margin: 0.25rem 0 0;
+  min-width: 0;
+}
+
+
+/* desktop ≥ 640px: restore single-line toolbar */
+@media (min-width: 600px) {
+  .form-buttons {
+    flex-wrap: nowrap;
+    row-gap: 0;
+  }
+  .checkbox-wrapper {
+    flex-grow: 1;
+  }
+  .sort-controls {
+    flex: 0 0 auto;
+    order: 0;
+    margin-left: 1rem;
+    margin-right: auto;
+  }
+  .form-buttons > button {
+    flex: 0 0 auto;
+  }
+}

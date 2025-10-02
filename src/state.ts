@@ -236,6 +236,7 @@ export async function openPreview(
 ) {
   const shouldUpdateUrl = opts?.updateUrl !== false;
 
+  // reflect file selection in hash as #p=<dir><file> (no trailing slash)
   if (shouldUpdateUrl) {
     const filePath = (store.dir + name).replace(/\/+$/, "");
     const nextHash = `#p=${encodeURIComponent(filePath)}`;
@@ -245,6 +246,7 @@ export async function openPreview(
     }
   }
 
+  // reset previous object URL
   if (store.preview.url) {
     try {
       URL.revokeObjectURL(store.preview.url);
@@ -268,6 +270,7 @@ export async function openPreview(
     if (!res.ok) throw new Error(`Failed to fetch file: ${res.status}`);
     const mime = (res.headers.get("content-type") || "").toLowerCase();
 
+    // 1) Images by header
     if (mime.startsWith("image/")) {
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
@@ -278,7 +281,11 @@ export async function openPreview(
         text: null,
         loading: false,
       } as any);
-    } else if (
+      return;
+    }
+
+    // 2) Text by header
+    if (
       mime.startsWith("text/") ||
       mime.includes("application/json") ||
       mime.includes("application/xml")
@@ -291,9 +298,33 @@ export async function openPreview(
         url: null,
         loading: false,
       } as any);
-    } else {
-      setStore("preview", { kind: "other", mime, loading: false } as any);
+      return;
     }
+
+    // 3) Heuristic for mislabeled JSON served as octet-stream
+    if (
+      mime === "application/octet-stream" ||
+      mime === "binary/octet-stream" ||
+      mime === ""
+    ) {
+      const blob = await res.blob();
+      const head = await blob.slice(0, 128).text().catch(() => "");
+      const first = head.replace(/^\uFEFF/, "").trim().charAt(0);
+      if (first === "{" || first === "[") {
+        const text = await blob.text();
+        setStore("preview", {
+          kind: "text",
+          mime: "application/json",
+          text,
+          url: null,
+          loading: false,
+        } as any);
+        return;
+      }
+      // fall through to unknown/binary
+    }
+
+    setStore("preview", { kind: "other", mime, loading: false } as any);
   } catch (e: any) {
     setStore("preview", {
       error: e?.message || "Preview failed",
@@ -301,6 +332,7 @@ export async function openPreview(
     } as any);
   }
 }
+
 
 export function closePreview() {
   if (store.preview.url) {
