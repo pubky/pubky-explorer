@@ -1,10 +1,30 @@
-import { Client } from "@synonymdev/pubky";
+import { Pubky } from "@synonymdev/pubky";
 import { createStore } from "solid-js/store";
 
-export const client =
-  import.meta.env.VITE_TESTNET == "true" ? Client.testnet() : new Client();
+export const pubky =
+  import.meta.env.VITE_TESTNET === "true" ? Pubky.testnet() : new Pubky();
+const publicStorage = pubky.publicStorage;
 
 export type ListItem = { link: string; name: string; isDirectory: boolean };
+
+const PUBKEY_RE = /^[a-z0-9]{52}$/i;
+
+export function isPubkeySegment(value: string): boolean {
+  return PUBKEY_RE.test(value);
+}
+
+export function formatDisplayPath(path: string): string {
+  return path.replace(/^([a-z0-9]{52})(?=\/|$)/i, "pubky$1");
+}
+
+export function stripInputPrefixes(raw: string): string {
+  let path = (raw || "").trim();
+  path = path.replace(/^pubky:\/\/?/i, "").replace(/^pk:/i, "");
+  if (/^pubky[a-z0-9]{52}(?:\/|$)/i.test(path)) {
+    path = path.replace(/^pubky/i, "");
+  }
+  return path;
+}
 
 type PreviewState = {
   open: boolean;
@@ -114,15 +134,10 @@ export function loadMore() {
   const reqId = ++currentRequestId;
   isFetching = true;
 
-  client
-    .list(`pubky://${path}`, cursor || "", false, limit, store.shallow)
+  listDirectory(path, cursor || null, limit)
     .then((l: Array<string>) => {
       if (reqId !== currentRequestId) return; // stale; ignore
-      const list = l.map((link) => {
-        let name = link.replace("pubky://", "").replace(store.dir, "");
-        let isDirectory = name.endsWith("/");
-        return { link, isDirectory, name };
-      });
+      const list = listToItems(l, store.dir);
 
       let map = new Map<string, ListItem>();
       for (let item of store.list) map.set(item.name, item);
@@ -204,7 +219,7 @@ export function updateDir(
 export async function downloadFile(link: string) {
   setStore("loading", true);
   try {
-    const response: Response = await client.fetch(link);
+    const response: Response = await publicStorage.get(link);
     if (!response.ok) {
       throw new Error(
         `Failed to fetch file: ${response.status} ${response.statusText}`,
@@ -266,7 +281,7 @@ export async function openPreview(
   });
 
   try {
-    const res = await client.fetch(link);
+    const res = await publicStorage.get(link);
     if (!res.ok) throw new Error(`Failed to fetch file: ${res.status}`);
     const mime = (res.headers.get("content-type") || "").toLowerCase();
 
@@ -369,14 +384,9 @@ export function prefetchDir(dirPath: string) {
   prefetchInFlight.add(key);
 
   const limit = Math.ceil(window.innerHeight / 40);
-  client
-    .list(`pubky://${dir}`, "", false, limit, store.shallow)
+  listDirectory(dir, null, limit)
     .then((l: Array<string>) => {
-      const list = l.map((link) => {
-        const name = link.replace("pubky://", "").replace(dir, "");
-        const isDirectory = name.endsWith("/");
-        return { link, isDirectory, name };
-      });
+      const list = listToItems(l, dir);
       cachePut(dir, { list, scroll: 0 });
     })
     .finally(() => prefetchInFlight.delete(key));
@@ -388,7 +398,27 @@ export function cacheSaveScroll(scroll: number = window.scrollY) {
   cacheSaveScrollFor(store.dir, scroll);
 }
 
-// --- helpers: cache, sort, normalize, revalidate ---
+// --- helpers: listing, cache, sort, normalize, revalidate ---
+
+function listDirectory(
+  path: string,
+  cursor: string | null,
+  limit: number,
+): Promise<string[]> {
+  const address = `pubky://${path}`;
+  return publicStorage.list(address, cursor, false, limit, store.shallow);
+}
+
+function listToItems(links: string[], dir: string): ListItem[] {
+  return links.map((link) => {
+    let name = link
+      .replace(/^pubky:\/\//i, "")
+      .replace(/^pubky(?=[a-z0-9]{52}(?:\/|$))/i, "");
+    if (name.startsWith(dir)) name = name.slice(dir.length);
+    const isDirectory = name.endsWith("/");
+    return { link, isDirectory, name };
+  });
+}
 
 function backgroundRevalidate(path: string) {
   const limit = Math.ceil(window.innerHeight / 40);
@@ -396,15 +426,10 @@ function backgroundRevalidate(path: string) {
   isFetching = true;
   setStore("loading", true);
 
-  client
-    .list(`pubky://${path}`, "", false, limit, store.shallow)
+  listDirectory(path, null, limit)
     .then((l: Array<string>) => {
       if (reqId !== currentRequestId) return;
-      const head = l.map((link) => {
-        let name = link.replace("pubky://", "").replace(path, "");
-        let isDirectory = name.endsWith("/");
-        return { link, isDirectory, name };
-      });
+      const head = listToItems(l, path);
 
       // merge head with existing list
       const map = new Map<string, ListItem>();
@@ -437,15 +462,14 @@ function sortItems(items: ListItem[]): ListItem[] {
 /** Normalize a directory path (always ends with '/'). */
 function normalizeDir(raw: string): string {
   let path = stripPrefixesAndResolve(raw);
-  if (path.length === 52) path = path + "/pub/";
+  if (isPubkeySegment(path)) path = path + "/pub/";
   if (!path.endsWith("/")) path = path + "/";
   return path;
 }
 
 /** Strip pubky:// or pk: and resolve ., .. and any accidental protocol/host. */
 function stripPrefixesAndResolve(raw: string): string {
-  let path = (raw || "").trim();
-  path = path.replace(/^pubky:\/\/?/i, "").replace(/^pk:/i, "");
+  let path = stripInputPrefixes(raw);
   try {
     if (/^[a-z]+:\/\//i.test(path)) {
       const u = new URL(path);
@@ -472,6 +496,17 @@ function normalizeError(e: any): string {
       return "Network error or PK not found";
     return e;
   }
+  const name = e?.name;
+  const statusCode =
+    e?.data && typeof e.data === "object" && "statusCode" in e.data
+      ? (e.data as { statusCode?: number }).statusCode
+      : undefined;
+  if (name === "RequestError" && typeof statusCode === "number") {
+    if (statusCode === 404) return "Not found";
+    if (statusCode === 403) return "Forbidden";
+    return `Request failed (${statusCode})`;
+  }
+  if (name === "InvalidInput") return "Invalid input";
   const msg = e.message || "Unknown error";
   if (/abort/i.test(msg)) return "Request canceled";
   if (/404/.test(msg)) return "Not found";

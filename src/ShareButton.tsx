@@ -1,5 +1,5 @@
 import { createSignal } from "solid-js";
-import { store } from "./state";
+import { formatDisplayPath, store } from "./state";
 
 type Props = {
   /** Optional explicit path to share (no scheme). If omitted, deduced from state. */
@@ -22,9 +22,10 @@ export function ShareButton(props: Props) {
         (store.preview?.open
           ? (store.dir + store.preview.name).replace(/\/+$/, "")
           : store.dir);
+      const sharePath = formatDisplayPath(p);
 
       const u = new URL(window.location.href);
-      u.hash = `#p=${encodeURIComponent(p)}`;
+      u.hash = `#p=${encodeURIComponent(sharePath)}`;
 
       const text = u.toString();
 

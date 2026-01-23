@@ -13,19 +13,18 @@ import {
   toggleDirsFirst,
   openPreview,
   closePreview,
+  formatDisplayPath,
+  isPubkeySegment,
+  stripInputPrefixes,
 } from "./state.ts";
 
 function App() {
   const [input, setInput] = createSignal("");
-  const [displayPrefix, setDisplayPrefix] = createSignal<
-    "" | "pubky://" | "pk:"
-  >("");
 
-  // mirror address bar; only add a prefix if the user used one
+  // mirror address bar using canonical pubky<z32> display format
   createEffect(() => {
     const path = store.dir;
-    const prefix = displayPrefix();
-    setInput(path ? (prefix ? prefix + path : path) : "");
+    setInput(path ? formatDisplayPath(path) : "");
   });
 
   function updateInput(value: string) {
@@ -42,22 +41,23 @@ function App() {
     if (!raw) return;
 
     setStore("explorer", true);
+    const stripped = stripInputPrefixes(raw);
 
     // If it ends with '/', treat as directory. Otherwise treat as "file in dir".
-    if (raw.endsWith("/")) {
-      updateDir(raw, "none"); // keep exact hash
+    if (stripped.endsWith("/")) {
+      updateDir(stripped, "none"); // keep exact hash
       closePreview();
       return;
     }
 
     // Split into dir + file; update dir without touching the URL; open preview without rewriting hash
-    const cut = raw.lastIndexOf("/");
-    const dir = cut >= 0 ? raw.slice(0, cut + 1) : raw; // handles bare key
-    const file = cut >= 0 ? raw.slice(cut + 1) : "";
+    const cut = stripped.lastIndexOf("/");
+    const dir = cut >= 0 ? stripped.slice(0, cut + 1) : stripped; // handles bare key
+    const file = cut >= 0 ? stripped.slice(cut + 1) : "";
 
     updateDir(dir, "none");
     if (file)
-      openPreview(`pubky://${store.dir}${file}`, file, { updateUrl: false });
+      openPreview(`pubky://${dir}${file}`, file, { updateUrl: false });
   }
 
   onMount(() => {
@@ -91,16 +91,10 @@ function App() {
             setStore("list", []);
 
             const raw = input().trim();
-            const m = raw.match(/^(pubky:\/\/|pk:)/i);
-            setDisplayPrefix(
-              m ? (m[1].toLowerCase() as "pubky://" | "pk:") : "",
-            );
 
             // Treat no trailing slash as "file in dir" for direct preview
-            const stripped = raw
-              .replace(/^pubky:\/\/?/i, "")
-              .replace(/^pk:/i, "");
-            const isBareKey = /^[A-Za-z0-9]{52}$/.test(stripped);
+            const stripped = stripInputPrefixes(raw);
+            const isBareKey = isPubkeySegment(stripped);
             const isFileIntent = !stripped.endsWith("/") && !isBareKey;
 
             if (isFileIntent) {
@@ -109,7 +103,7 @@ function App() {
               const file = cut >= 0 ? stripped.slice(cut + 1) : "";
               updateDir(dir, "push");
               if (file)
-                openPreview(`pubky://${store.dir}${file}`, file, {
+                openPreview(`pubky://${dir}${file}`, file, {
                   updateUrl: true,
                 });
               setStore("explorer", true);
