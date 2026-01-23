@@ -12,11 +12,11 @@
   "dependencies": {
     "@faker-js/faker": "^8.4.1",
     "@synonymdev/pubky": "^0.6.0",
-    "solid-js": "^1.8.19"
+    "solid-js": "^1.9.9"
   },
   "devDependencies": {
     "typescript": "^5.5.3",
-    "vite": "^5.3.5",
-    "vite-plugin-solid": "^2.10.2"
+    "vite": "^7.2.4",
+    "vite-plugin-solid": "^2.11.8"
   }
 }
