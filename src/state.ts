@@ -1,4 +1,5 @@
 import { Pubky } from "@synonymdev/pubky";
+import type { Address } from "@synonymdev/pubky";
 import { createStore } from "solid-js/store";
 
 export const pubky =
@@ -219,7 +220,7 @@ export function updateDir(
 export async function downloadFile(link: string) {
   setStore("loading", true);
   try {
-    const response: Response = await publicStorage.get(link);
+    const response: Response = await publicStorage.get(toAddress(link));
     if (!response.ok) {
       throw new Error(
         `Failed to fetch file: ${response.status} ${response.statusText}`,
@@ -281,7 +282,7 @@ export async function openPreview(
   });
 
   try {
-    const res = await publicStorage.get(link);
+    const res = await publicStorage.get(toAddress(link));
     if (!res.ok) throw new Error(`Failed to fetch file: ${res.status}`);
     const mime = (res.headers.get("content-type") || "").toLowerCase();
 
@@ -405,8 +406,12 @@ function listDirectory(
   cursor: string | null,
   limit: number,
 ): Promise<string[]> {
-  const address = `pubky://${path}`;
+  const address = toAddress(`pubky://${path}`);
   return publicStorage.list(address, cursor, false, limit, store.shallow);
+}
+
+function toAddress(value: string): Address {
+  return value as Address;
 }
 
 function listToItems(links: string[], dir: string): ListItem[] {
