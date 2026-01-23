@@ -7,6 +7,7 @@ import {
   loadMore,
   prefetchDir,
   cacheSaveScroll,
+  isPubkeySegment,
 } from "./state.ts";
 import Preview from "./Preview";
 
@@ -153,7 +154,9 @@ function DirectoryButtons() {
     for (let part of root) {
       if (part.length == 0) continue;
       previous += part + "/";
-      buttons.push({ text: part, path: previous });
+      const text =
+        buttons.length === 0 && isPubkeySegment(part) ? `pubky${part}` : part;
+      buttons.push({ text, path: previous });
     }
     return buttons;
   }
