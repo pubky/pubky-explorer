@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@synonymdev/pubky": "^0.6.0",
-    "solid-js": "^1.9.10"
+    "solid-js": "^1.9.11"
   },
   "devDependencies": {
     "typescript": "^5.5.3",
