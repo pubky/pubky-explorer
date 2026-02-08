@@ -1,7 +1,14 @@
-import { Show, onCleanup } from "solid-js";
-import { store, closePreview, downloadFile } from "./state";
+import { Show, onCleanup, createSignal } from "solid-js";
+import { store, closePreview, downloadFile, loadList, openPreview } from "./state";
 import { ShareButton } from "./ShareButton";
+import {
+  isOwnData,
+  toStoragePath,
+  putFileContent,
+  deleteFileAtPath,
+} from "./auth";
 import "./css/Preview.css";
+import "./css/Auth.css";
 
 /* --- tiny JSON pretty-printer + highlighter (no deps) --- */
 
@@ -62,11 +69,79 @@ function prettyJsonHTML(raw: string | null | undefined) {
 /* --- component --- */
 
 export default function Preview() {
+  const [editing, setEditing] = createSignal(false);
+  const [editContent, setEditContent] = createSignal("");
+  const [saving, setSaving] = createSignal(false);
+  const [saveMsg, setSaveMsg] = createSignal<{
+    ok: boolean;
+    text: string;
+  } | null>(null);
+
   let escHandler = (e: KeyboardEvent) => {
-    if (e.key === "Escape") closePreview();
+    if (e.key === "Escape") {
+      if (editing()) {
+        setEditing(false);
+        return;
+      }
+      closePreview();
+    }
   };
   window.addEventListener("keydown", escHandler);
   onCleanup(() => window.removeEventListener("keydown", escHandler));
+
+  const canEdit = () =>
+    store.preview.open &&
+    store.preview.kind === "text" &&
+    isOwnData(store.dir);
+
+  const canDelete = () => store.preview.open && isOwnData(store.dir);
+
+  function startEdit() {
+    setEditContent(store.preview.text || "");
+    setSaveMsg(null);
+    setEditing(true);
+  }
+
+  function cancelEdit() {
+    setEditing(false);
+    setSaveMsg(null);
+  }
+
+  async function saveEdit() {
+    setSaving(true);
+    setSaveMsg(null);
+    try {
+      const filePath = store.dir + store.preview.name;
+      const storagePath = toStoragePath(filePath);
+      await putFileContent(storagePath, editContent());
+      setSaveMsg({ ok: true, text: "Saved" });
+      setEditing(false);
+      // reload preview content
+      openPreview(store.preview.link, store.preview.name, {
+        updateUrl: false,
+      });
+    } catch (e: any) {
+      setSaveMsg({ ok: false, text: e?.message || "Save failed" });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDelete() {
+    if (!confirm(`Delete "${store.preview.name}"?`)) return;
+    setSaving(true);
+    try {
+      const filePath = store.dir + store.preview.name;
+      const storagePath = toStoragePath(filePath);
+      await deleteFileAtPath(storagePath);
+      closePreview();
+      loadList();
+    } catch (e: any) {
+      setSaveMsg({ ok: false, text: e?.message || "Delete failed" });
+    } finally {
+      setSaving(false);
+    }
+  }
 
   return (
     <Show when={store.preview.open}>
@@ -82,6 +157,18 @@ export default function Preview() {
               {store.preview.name}
             </div>
             <div class="pv-actions">
+              <Show when={canEdit() && !editing()}>
+                <button onClick={startEdit}>Edit</button>
+              </Show>
+              <Show when={canDelete() && !editing()}>
+                <button
+                  class="delete-btn"
+                  onClick={handleDelete}
+                  disabled={saving()}
+                >
+                  Delete
+                </button>
+              </Show>
               <ShareButton
                 path={(store.dir + store.preview.name).replace(/\/+$/, "")}
               />
@@ -92,15 +179,39 @@ export default function Preview() {
             </div>
           </div>
 
+          <Show when={saveMsg()}>
+            <div class={saveMsg()!.ok ? "pv-save-ok" : "pv-save-err"}>
+              {saveMsg()!.text}
+            </div>
+          </Show>
+
           <Show when={store.preview.error}>
             <div class="pv-error">{store.preview.error}</div>
           </Show>
 
           <Show when={store.preview.loading}>
-            <div class="pv-loading">Loading…</div>
+            <div class="pv-loading">Loading...</div>
           </Show>
 
-          <Show when={!store.preview.loading && !store.preview.error}>
+          <Show when={editing()}>
+            <div class="pv-body">
+              <textarea
+                class="pv-edit-area"
+                value={editContent()}
+                onInput={(e) =>
+                  setEditContent((e.target as HTMLTextAreaElement).value)
+                }
+              />
+            </div>
+            <div class="pv-edit-actions">
+              <button class="save-btn" onClick={saveEdit} disabled={saving()}>
+                {saving() ? "Saving..." : "Save"}
+              </button>
+              <button onClick={cancelEdit}>Cancel</button>
+            </div>
+          </Show>
+
+          <Show when={!store.preview.loading && !store.preview.error && !editing()}>
             <div class="pv-body">
               <Show when={store.preview.kind === "image"}>
                 <img

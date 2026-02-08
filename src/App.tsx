@@ -3,6 +3,7 @@ import "./css/App.css";
 import { Explorer } from "./Explorer.tsx";
 import { Spinner } from "./Spinner.tsx";
 import { ShareButton } from "./ShareButton";
+import SignIn from "./SignIn";
 import { Show, createSignal, onMount, onCleanup, createEffect } from "solid-js";
 import {
   store,
@@ -17,6 +18,13 @@ import {
   isPubkeySegment,
   stripInputPrefixes,
 } from "./state.ts";
+import {
+  isAuthenticated,
+  currentUserPubky,
+  setShowSignIn,
+  signOut,
+  restoreSession,
+} from "./auth";
 
 function App() {
   const [input, setInput] = createSignal("");
@@ -60,16 +68,55 @@ function App() {
       openPreview(`pubky://${dir}${file}`, file, { updateUrl: false });
   }
 
-  onMount(() => {
+  onMount(async () => {
+    await restoreSession();
     handleUrl();
     const onPop = () => handleUrl();
     window.addEventListener("popstate", onPop);
     onCleanup(() => window.removeEventListener("popstate", onPop));
   });
 
+  function exploreOwnData() {
+    const pk = currentUserPubky();
+    if (!pk) return;
+    setInput(formatDisplayPath(pk + "/pub/"));
+    updateDir(pk + "/pub/", "push");
+    setStore("explorer", true);
+  }
+
+  const shortPubky = () => {
+    const pk = currentUserPubky();
+    if (!pk) return "";
+    return "pubky" + pk.slice(0, 6) + "..." + pk.slice(-4);
+  };
+
   return (
     <>
       <Spinner />
+      <SignIn />
+      <div class="auth-bar">
+        <Show
+          when={isAuthenticated()}
+          fallback={
+            <button
+              class="auth-btn"
+              onClick={() => setShowSignIn(true)}
+            >
+              Sign In
+            </button>
+          }
+        >
+          <span class="auth-user" title={currentUserPubky() || ""}>
+            {shortPubky()}
+          </span>
+          <button class="auth-btn" onClick={exploreOwnData}>
+            My Data
+          </button>
+          <button class="auth-btn" onClick={signOut}>
+            Sign Out
+          </button>
+        </Show>
+      </div>
       <div class="head">
         <div>
           <a href="https://pubky.app" target="_blank" rel="noopener noreferrer">
