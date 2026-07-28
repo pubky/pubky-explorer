@@ -2,8 +2,8 @@ import { Pubky } from "@synonymdev/pubky";
 import type { Address } from "@synonymdev/pubky";
 import { createStore } from "solid-js/store";
 
-export const pubky =
-  import.meta.env.VITE_TESTNET === "true" ? Pubky.testnet() : new Pubky();
+export const IS_TESTNET = import.meta.env.VITE_TESTNET === "true";
+export const pubky = IS_TESTNET ? Pubky.testnet() : new Pubky();
 const publicStorage = pubky.publicStorage;
 
 export type ListItem = { link: string; name: string; isDirectory: boolean };

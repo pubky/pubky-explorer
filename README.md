@@ -1,6 +1,6 @@
 # Pubky Explorer
 
-https://explorer.pubky.app
+https://explorer.pubky.app (wired for a testnet running on your localhost: https://explorer.pubky.app/testnet/)
 
 ## Usage
 

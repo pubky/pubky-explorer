@@ -34,12 +34,12 @@ jobs:
         run: npm ci
 
       - name: Build static site
-        run: npm run build
+        run: npm run build:pages
 
       - name: Upload static site
         uses: actions/upload-pages-artifact@v3
         with:
-          path: dist
+          path: _site
 
       - name: Deploy to GitHub Pages
         id: deployment
