@@ -14,11 +14,6 @@ const LOCAL_SERVICES: LocalService[] = [
     port: 15411,
     url: "http://localhost:15411/",
   },
-  {
-    name: "Homeserver",
-    port: 6286,
-    url: "http://localhost:6286/",
-  },
 ];
 
 const PROBE_INTERVAL_MS = 15_000;
