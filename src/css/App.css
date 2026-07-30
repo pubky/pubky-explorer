@@ -81,13 +81,13 @@
   font-size: inherit;
 }
 
-.testnet-service.connected strong,
-.testnet-service.connected i {
+.testnet-service.reachable strong,
+.testnet-service.reachable i {
   color: #4ade80;
 }
 
-.testnet-service.disconnected strong,
-.testnet-service.disconnected i {
+.testnet-service.no-response strong,
+.testnet-service.no-response i {
   color: #fca5a5;
 }
 

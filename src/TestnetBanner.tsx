@@ -1,6 +1,6 @@
 import { For, createSignal, onCleanup, onMount } from "solid-js";
 
-type ServiceStatus = "checking" | "connected" | "disconnected";
+type ServiceStatus = "checking" | "reachable" | "no-response";
 
 type LocalService = {
   name: string;
@@ -109,16 +109,16 @@ async function probeService(service: LocalService): Promise<ServiceStatus> {
       credentials: "omit",
       signal: controller.signal,
     });
-    return "connected";
+    return "reachable";
   } catch {
-    return "disconnected";
+    return "no-response";
   } finally {
     window.clearTimeout(timeout);
   }
 }
 
 function statusLabel(status: ServiceStatus): string {
-  if (status === "connected") return "Connected";
-  if (status === "disconnected") return "Unavailable";
+  if (status === "reachable") return "Reachable";
+  if (status === "no-response") return "No repsonse";
   return "Checking";
 }
