@@ -114,6 +114,6 @@ async function probeService(service: LocalService): Promise<ServiceStatus> {
 
 function statusLabel(status: ServiceStatus): string {
   if (status === "reachable") return "Reachable";
-  if (status === "no-response") return "No repsonse";
+  if (status === "no-response") return "No response";
   return "Checking";
 }
