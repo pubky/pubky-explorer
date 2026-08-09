@@ -11,6 +11,99 @@
   flex-direction: column;
 }
 
+.testnet-banner {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-self: center;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  box-sizing: border-box;
+  width: 100vw;
+  margin-top: -2rem;
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 2px solid #7c2d12;
+  background: #f97316;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  color: #1c0a00;
+  font-size: 0.9rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.testnet-banner-title {
+  flex: 0 0 auto;
+}
+
+.testnet-services {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  justify-content: center;
+  gap: 0.5rem;
+  width: auto;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.testnet-service {
+  display: inline-flex;
+  width: auto;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  background: rgba(28, 10, 0, 0.72);
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.testnet-service i {
+  width: 0.55rem;
+  height: 0.55rem;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 0.45rem currentColor;
+}
+
+.testnet-service strong {
+  font-size: inherit;
+}
+
+.testnet-service.reachable strong,
+.testnet-service.reachable i {
+  color: #4ade80;
+}
+
+.testnet-service.no-response strong,
+.testnet-service.no-response i {
+  color: #fca5a5;
+}
+
+.testnet-service.checking strong,
+.testnet-service.checking i {
+  color: #fde68a;
+}
+
+@media (max-width: 600px) {
+  .testnet-banner {
+    flex-direction: column;
+    gap: 0.45rem;
+    padding-block: 0.6rem;
+  }
+}
+
 .head {
   position: relative;
   width: 100%;

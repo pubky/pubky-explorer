@@ -3,6 +3,7 @@ import "./css/App.css";
 import { Explorer } from "./Explorer.tsx";
 import { Spinner } from "./Spinner.tsx";
 import { ShareButton } from "./ShareButton";
+import { TestnetBanner } from "./TestnetBanner";
 import { Show, createSignal, onMount, onCleanup, createEffect } from "solid-js";
 import {
   store,
@@ -14,6 +15,7 @@ import {
   openPreview,
   closePreview,
   formatDisplayPath,
+  IS_TESTNET,
   isPubkeySegment,
   stripInputPrefixes,
 } from "./state.ts";
@@ -70,6 +72,9 @@ function App() {
   return (
     <>
       <Spinner />
+      <Show when={IS_TESTNET}>
+        <TestnetBanner />
+      </Show>
       <div class="head">
         <div>
           <a href="https://pubky.app" target="_blank" rel="noopener noreferrer">
