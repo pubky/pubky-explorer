@@ -1,0 +1,53 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+env:
+  REGISTRY: europe-west6-docker.pkg.dev/infra-464608/synonym-private-repo
+  IMAGE: pubky-explorer
+  REGION: europe-west6
+  SERVICE: pubky-explorer
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: pubky/ci-workflows/.github/actions/docker/registry_login@main
+        with:
+          registry: ${{ env.REGISTRY }}
+          gcp_service_account_key: ${{ secrets.GRC_INFRA_READ_WRITE }}
+
+      - uses: pubky/ci-workflows/.github/actions/docker/build_and_push@main
+        with:
+          registry: ${{ env.REGISTRY }}
+          image: ${{ env.IMAGE }}
+          context: .
+          cache_from: type=gha
+          cache_to: type=gha,mode=max
+
+      - uses: pubky/ci-workflows/.github/actions/cloudrun/deploy@main
+        with:
+          gcp_service_account_key: ${{ secrets.CLOUDRUN_INFRA }}
+          region: ${{ env.REGION }}
+          service: ${{ env.SERVICE }}
+          image: ${{ env.REGISTRY }}/${{ env.IMAGE }}:${{ github.sha }}
+          flags: >-
+            --port=8080
+            --ingress=internal-and-cloud-load-balancing
+            --allow-unauthenticated
+            --max-instances=3

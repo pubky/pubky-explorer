@@ -1,9 +1,9 @@
 import { defineConfig, type Plugin } from "vite";
 import solid from "vite-plugin-solid";
 
-function pagesPreviewFallback(): Plugin {
+function sitePreviewFallback(): Plugin {
   return {
-    name: "pages-preview-fallback",
+    name: "site-preview-fallback",
     configurePreviewServer(server) {
       server.middlewares.use((request, _response, next) => {
         const previewRequest = request as unknown as {
@@ -31,5 +31,5 @@ function pagesPreviewFallback(): Plugin {
 }
 
 export default defineConfig(({ mode }) => ({
-  plugins: [solid(), mode === "pages" && pagesPreviewFallback()],
+  plugins: [solid(), mode === "site" && sitePreviewFallback()],
 }));

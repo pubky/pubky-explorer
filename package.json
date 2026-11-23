@@ -7,9 +7,9 @@
     "start": "vite",
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "build:pages": "npm run build -- --base ./ --outDir _site && VITE_TESTNET=true npm run build -- --base /testnet/ --outDir _site/testnet",
+    "build:site": "VITE_TESTNET=false npm run build -- --base / --outDir dist && VITE_TESTNET=true npm run build -- --base /testnet/ --outDir dist/testnet",
     "preview": "vite preview",
-    "preview:pages": "vite preview --mode pages --outDir _site"
+    "preview:site": "vite preview --mode site --outDir dist"
   },
   "dependencies": {
     "@synonymdev/pubky": "^0.6.0",
